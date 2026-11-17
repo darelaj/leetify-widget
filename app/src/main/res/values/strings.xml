@@ -5,6 +5,17 @@
     <string name="widget_setup">Set up your account to see stats.</string>
     <string name="widget_settings">Account settings</string>
     <string name="widget_preview_metrics">Aim · Utility · Leetify Rating · Premier</string>
+    <string name="widget_refresh">Refresh</string>
+    <string name="widget_loading">Updating stats…</string>
+    <string name="widget_source">View on Leetify</string>
+    <string name="widget_attribution">Data Provided by Leetify</string>
+    <string name="widget_updated">Fetched %1$s</string>
+    <string name="widget_recent">Recent matches</string>
+    <string name="widget_no_matches">No recent matches</string>
+    <string name="metric_aim">Aim</string>
+    <string name="metric_utility">Utility</string>
+    <string name="metric_leetify">Leetify Rating</string>
+    <string name="metric_premier">Premier</string>
     <string name="account_title">Account setup</string>
     <string name="account_intro">Enter your SteamID64 to check your Counter-Strike profile. You need a registered, accessible Leetify account. Never enter your Steam password.</string>
     <string name="steam_id">SteamID64</string>
