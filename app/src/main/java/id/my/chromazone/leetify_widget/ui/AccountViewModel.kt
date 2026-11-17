@@ -2,14 +2,13 @@ package id.my.chromazone.leetify_widget.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import id.my.chromazone.leetify_widget.data.LeetifyApi
 import id.my.chromazone.leetify_widget.data.AccountCredentials
 import id.my.chromazone.leetify_widget.data.AccountStorage
 import id.my.chromazone.leetify_widget.data.AccountStorageException
+import id.my.chromazone.leetify_widget.data.LeetifyApi
 import id.my.chromazone.leetify_widget.data.ProfileApiException
-import id.my.chromazone.leetify_widget.data.ProfileFailure
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
@@ -17,9 +16,9 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 internal class AccountViewModel(
     private val api: LeetifyApi,
@@ -29,15 +28,20 @@ internal class AccountViewModel(
     private val mutableState = MutableStateFlow(AccountState())
     val state = mutableState.asStateFlow()
     private var verification: Job? = null
-    @Volatile private var generation = 0L
+    @Volatile
+    private var generation = 0L
     private val writes = Mutex()
 
     init {
         viewModelScope.launch {
             try {
                 val saved = withContext(io) { storage.load() }
-                mutableState.value = AccountState(steamId = saved?.steamId.orEmpty(), loading = false,
-                    configured = saved != null, hasSavedKey = saved?.apiKey != null)
+                mutableState.value = AccountState(
+                    steamId = saved?.steamId.orEmpty(),
+                    loading = false,
+                    configured = saved != null,
+                    hasSavedKey = saved?.apiKey != null,
+                )
             } catch (_: AccountStorageException) {
                 mutableState.value = AccountState(loading = false, message = AccountMessage.STORAGE_FAILURE)
             }
@@ -57,8 +61,9 @@ internal class AccountViewModel(
     }
 
     fun verify() {
-        if (state.value.loading || state.value.busy) return
         val input = state.value
+        if (input.loading || input.busy) return
+
         val steamId = input.steamId.trim()
         val key = input.apiKey.trim()
         val invalid = validateAccountInput(steamId, key)
@@ -66,48 +71,58 @@ internal class AccountViewModel(
             mutableState.value = input.copy(message = invalid)
             return
         }
+
         invalidate()
         val ticket = generation
         mutableState.value = input.copy(busy = true, message = null)
         verification = viewModelScope.launch {
-            var savedHasKey = input.hasSavedKey
-            val message = withContext(io) {
-                try {
-                    val saved = storage.load()
-                    val effectiveKey = key.ifEmpty { null } ?: saved?.apiKey?.takeIf {
-                        !input.removeSavedKey && saved.steamId == steamId
-                    }
-                    if (effectiveKey != null) api.validateApiKey(effectiveKey)
-                    currentCoroutineContext().ensureActive()
-                    api.fetchProfile(steamId, effectiveKey)
-                    currentCoroutineContext().ensureActive()
-                    writes.withLock {
-                        if (ticket != generation) return@withContext null
-                        storage.save(AccountCredentials(steamId, effectiveKey))
-                    }
-                    savedHasKey = effectiveKey != null
-                    AccountMessage.VERIFIED
-                } catch (_: AccountStorageException) {
-                    AccountMessage.STORAGE_FAILURE
-                } catch (error: ProfileApiException) {
-                    when (error.failure) {
-                        ProfileFailure.UNAUTHORIZED -> AccountMessage.UNAUTHORIZED
-                        ProfileFailure.ACCESS_DENIED -> AccountMessage.ACCESS_DENIED
-                        ProfileFailure.PROFILE_UNAVAILABLE -> AccountMessage.UNAVAILABLE
-                        ProfileFailure.RATE_LIMITED -> AccountMessage.RATE_LIMITED
-                        ProfileFailure.SERVER -> AccountMessage.SERVER
-                        ProfileFailure.NETWORK -> AccountMessage.NETWORK
-                        ProfileFailure.TIMEOUT -> AccountMessage.TIMEOUT
-                        ProfileFailure.INVALID_RESPONSE -> AccountMessage.INVALID_RESPONSE
-                        ProfileFailure.HTTP_ERROR -> AccountMessage.HTTP_ERROR
-                    }
-                }
+            try {
+                val hasSavedKey = withContext(io) {
+                    verifyAndSave(input, steamId, key, ticket)
+                } ?: return@launch
+                if (ticket != generation) return@launch
+
+                mutableState.value = state.value.copy(
+                    busy = false,
+                    apiKey = "",
+                    message = AccountMessage.VERIFIED,
+                    configured = true,
+                    hasSavedKey = hasSavedKey,
+                    removeSavedKey = false,
+                )
+            } catch (_: AccountStorageException) {
+                showFailure(ticket, AccountMessage.STORAGE_FAILURE)
+            } catch (error: ProfileApiException) {
+                showFailure(ticket, error.failure.toAccountMessage())
             }
-            if (ticket != generation || message == null) return@launch
-            mutableState.value = state.value.copy(busy = false, apiKey = "", message = message,
-                configured = message == AccountMessage.VERIFIED || state.value.configured,
-                hasSavedKey = savedHasKey,
-                removeSavedKey = if (message == AccountMessage.VERIFIED) false else state.value.removeSavedKey)
+        }
+    }
+
+    private suspend fun verifyAndSave(
+        input: AccountState,
+        steamId: String,
+        key: String,
+        ticket: Long,
+    ): Boolean? {
+        val saved = storage.load()
+        val effectiveKey = key.ifEmpty { null } ?: saved?.apiKey?.takeIf {
+            !input.removeSavedKey && saved.steamId == steamId
+        }
+        if (effectiveKey != null) api.validateApiKey(effectiveKey)
+        currentCoroutineContext().ensureActive()
+        api.fetchProfile(steamId, effectiveKey)
+        currentCoroutineContext().ensureActive()
+
+        return writes.withLock {
+            if (ticket != generation) return@withLock null
+            storage.save(AccountCredentials(steamId, effectiveKey))
+            effectiveKey != null
+        }
+    }
+
+    private fun showFailure(ticket: Long, message: AccountMessage) {
+        if (ticket == generation) {
+            mutableState.value = state.value.copy(busy = false, apiKey = "", message = message)
         }
     }
 

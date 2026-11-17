@@ -30,3 +30,9 @@ References: [Android Keystore key generation](https://developer.android.com/refe
 - Backup XML paths and secret logging were reviewed. Actual backup/restore transport behavior and API 24 device behavior were not exercised. No personal credentials or live authenticated requests were used.
 
 Widgets and scheduled refresh are the next milestones. There are no widget instances or scheduled jobs to clear yet; their account-change invalidation and rendering cleanup must be connected when implemented. Attribution assets, release branding, and the provider's render-retention clarification remain release gates from the requirements.
+
+## Code-practice refactor
+
+The follow-up `feat/android-code-practices` branch separates the credential model, storage interface, DataStore implementation, storage exception, API failure enum, and Retry-After parser into focused files. UI message mappings live outside the composable and ViewModel. The verification workflow now separates background verification/persistence from success/error state updates, without changing cancellation checks, generation checks, or serialized reset handling. Compose calls and activity construction use readable named arguments. No dependency versions, storage format, API endpoints, or screen behavior changed.
+
+Refactor regression checks passed: all 25 JVM tests, three API 37 emulator instrumentation tests, debug assembly, lint (0 errors, the same 14 warnings), and Git whitespace checks. The generated `.kotlin/` cache is now ignored. Live API, API 24 device, and backup transport checks remain unrun.

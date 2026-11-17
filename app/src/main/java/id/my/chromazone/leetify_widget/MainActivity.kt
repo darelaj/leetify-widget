@@ -7,10 +7,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import id.my.chromazone.leetify_widget.data.LeetifyApi
@@ -24,9 +24,17 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val model = ViewModelProvider(this, viewModelFactory {
-            initializer { AccountViewModel(LeetifyApi(), PreferencesAccountStorage(applicationContext.accountDataStore)) }
-        })[AccountViewModel::class.java]
+        val model = ViewModelProvider(
+            this,
+            viewModelFactory {
+                initializer {
+                    AccountViewModel(
+                        api = LeetifyApi(),
+                        storage = PreferencesAccountStorage(applicationContext.accountDataStore),
+                    )
+                }
+            },
+        )[AccountViewModel::class.java]
         setContent {
             LeetifywidgetTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
