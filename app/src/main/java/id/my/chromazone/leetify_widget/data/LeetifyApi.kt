@@ -2,6 +2,7 @@ package id.my.chromazone.leetify_widget.data
 
 import androidx.annotation.WorkerThread
 import java.io.IOException
+import java.io.InterruptedIOException
 import java.util.concurrent.TimeUnit
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -10,22 +11,29 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
-internal class LeetifyApi(private val client: OkHttpClient = defaultClient()) {
+internal class LeetifyApi(
+    private val client: OkHttpClient = defaultClient(),
+    private val nowMillis: () -> Long = System::currentTimeMillis,
+) {
     // Blocking by design: call from a worker or Dispatchers.IO, never the UI thread.
     @WorkerThread
     fun fetchProfile(steamId: String, apiKey: String? = null): PlayerProfile {
         require(steamId.matches(Regex("[0-9]{17}"))) { "Enter a 17-digit SteamID64" }
         return request("v3/profile", apiKey, steamId) { response ->
             val body = response.body
-            if (body.contentLength() > MAX_BODY_BYTES) throw IOException("Response too large")
+            if (body.contentLength() > MAX_BODY_BYTES) throw ProfileApiException(ProfileFailure.INVALID_RESPONSE)
             val source = body.source()
-            if (source.request(MAX_BODY_BYTES + 1)) throw IOException("Response too large")
+            if (source.request(MAX_BODY_BYTES + 1)) throw ProfileApiException(ProfileFailure.INVALID_RESPONSE)
             try {
                 val profile = Json.parseToJsonElement(source.readUtf8()) as? JsonObject
-                    ?: throw IOException("Expected a profile object")
+                    ?: throw ProfileApiException(ProfileFailure.INVALID_RESPONSE)
+                val privacyMode = profile["privacy_mode"].text()
+                if (privacyMode != null && privacyMode != "public") {
+                    throw ProfileApiException(ProfileFailure.PROFILE_UNAVAILABLE)
+                }
                 profile.toPlayerProfile(steamId)
             } catch (_: SerializationException) {
-                throw IOException("Invalid profile response")
+                throw ProfileApiException(ProfileFailure.INVALID_RESPONSE)
             }
         }
     }
@@ -51,9 +59,30 @@ internal class LeetifyApi(private val client: OkHttpClient = defaultClient()) {
             .header("Cache-Control", "no-store").apply {
                 if (key != null) header("Authorization", "Bearer $key")
             }.build()
-        return client.newCall(request).execute().use { response ->
-            if (response.code != 200) throw IOException("API request failed (${response.code})")
-            read(response)
+        try {
+            return client.newCall(request).execute().use { response ->
+                if (response.code != 200) {
+                    val failure = when (response.code) {
+                        401 -> ProfileFailure.UNAUTHORIZED
+                        403 -> ProfileFailure.ACCESS_DENIED
+                        404 -> ProfileFailure.PROFILE_UNAVAILABLE
+                        429 -> ProfileFailure.RATE_LIMITED
+                        in 500..599 -> ProfileFailure.SERVER
+                        else -> ProfileFailure.HTTP_ERROR
+                    }
+                    val retryAt = if (failure == ProfileFailure.RATE_LIMITED || failure == ProfileFailure.SERVER) {
+                        retryAtMillis(response.header("Retry-After"), nowMillis())
+                    } else null
+                    throw ProfileApiException(failure, retryAt)
+                }
+                read(response)
+            }
+        } catch (error: ProfileApiException) {
+            throw error
+        } catch (_: InterruptedIOException) {
+            throw ProfileApiException(ProfileFailure.TIMEOUT)
+        } catch (_: IOException) {
+            throw ProfileApiException(ProfileFailure.NETWORK)
         }
     }
 

@@ -1,6 +1,5 @@
 package id.my.chromazone.leetify_widget.data
 
-import java.io.IOException
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlinx.serialization.json.JsonArray
@@ -31,10 +30,10 @@ internal enum class MatchOutcome { WIN, LOSS, DRAW, UNKNOWN }
 @OptIn(ExperimentalTime::class)
 internal fun JsonObject.toPlayerProfile(steamId: String): PlayerProfile {
     if (keys.none { it in setOf("steam64_id", "rating", "ranks", "recent_matches", "privacy_mode") }) {
-        throw IOException("Expected a profile object")
+        throw ProfileApiException(ProfileFailure.INVALID_RESPONSE)
     }
     val responseId = this["steam64_id"].text()
-    if (responseId != null && responseId != steamId) throw IOException("Profile identity mismatch")
+    if (responseId != null && responseId != steamId) throw ProfileApiException(ProfileFailure.INVALID_RESPONSE)
     val rating = this["rating"] as? JsonObject
     val ranks = this["ranks"] as? JsonObject
     val matches = (this["recent_matches"] as? JsonArray).orEmpty().mapNotNull { element ->
