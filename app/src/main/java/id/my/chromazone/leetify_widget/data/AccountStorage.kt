@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import java.io.IOException
 import java.security.GeneralSecurityException
+import java.security.ProviderException
 import kotlinx.coroutines.flow.first
 
 internal class AccountCredentials(val steamId: String, val apiKey: String?) {
@@ -58,6 +59,8 @@ internal class PreferencesAccountStorage(
     private suspend fun <T> protect(block: suspend () -> T): T = try {
         block()
     } catch (_: GeneralSecurityException) {
+        throw AccountStorageException()
+    } catch (_: ProviderException) {
         throw AccountStorageException()
     } catch (_: IOException) {
         throw AccountStorageException()

@@ -7,7 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             LeetifywidgetTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    val state by model.state.collectAsState()
+                    val state by model.state.collectAsStateWithLifecycle()
                     AccountScreen(
                         state = state,
                         onSteamId = model::editSteamId,
