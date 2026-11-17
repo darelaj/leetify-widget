@@ -38,3 +38,32 @@ Generated, ignored reports:
 No emulator/device test, release build, or authenticated API request was run in the baseline task. The placeholder test confirms the harness runs, not that any widget behavior exists.
 
 Reference: [AGP 9.5 compatibility](https://developer.android.com/build/releases/agp-9-5-0-release-notes) lists Gradle 9.6.0 and support through API 37.
+
+## Foundation dependencies
+
+Versions are pinned in `gradle/libs.versions.toml` and used by `app/build.gradle.kts`:
+
+| Dependency | Version | Purpose |
+| --- | --- | --- |
+| Glance AppWidget | 1.2.0 | Home-screen widget composables and host integration |
+| WorkManager runtime | 2.12.0 | Coroutine workers and deferrable refresh; minimum API 24 |
+| DataStore preferences | 1.3.0 | Configuration/settings only, not API stats |
+| OkHttp | 5.3.0 | Public API HTTP requests; published Kotlin stdlib dependency is 2.2.21 |
+| kotlinx.serialization JSON | 1.9.0 | JSON parsing; release targets Kotlin 2.2 |
+| Kotlin serialization compiler plugin | 2.2.10 | Matches the existing Kotlin/Compose plugin version |
+
+These are stable releases selected for the existing Kotlin 2.2 toolchain. They are not a claim that every selected library is the latest available. No existing dependency/toolchain versions were upgraded. WorkManager's Kotlin APIs live in `work-runtime`, so a separate `work-runtime-ktx` dependency is unnecessary. Glance core is available transitively through AppWidget. No logging interceptor, database, chart library, or extra module was added.
+
+The manifest now grants INTERNET and explicitly disables cleartext HTTP, including on API 24 where the platform default differs. No client, API credentials, disk cache, network request, widget provider, or worker is created by this foundation task.
+
+After adding dependencies, the same build/test/lint command succeeded with 52 tasks executed. The existing single unit test passed. Lint reported **0 errors and 13 warnings**: the 10 baseline warnings plus update notices for the serialization plugin, OkHttp, and serialization runtime. Versions remain pinned for the existing toolchain rather than upgrading Kotlin as part of dependency setup. Native strip warnings included DataStore's shared counter library; both native libraries were packaged unchanged.
+
+The generated merged debug manifest was checked for exactly one INTERNET permission, `usesCleartextTraffic=false`, and minSdk 24. `git diff --check` passed. No new behavior was introduced that warrants additional unit tests at this stage; actual network/parsing, scheduling, and settings tests belong to their implementation tasks. Device and release-build checks remain unrun.
+
+Release references:
+
+- [Glance releases](https://developer.android.com/jetpack/androidx/releases/glance)
+- [WorkManager releases](https://developer.android.com/jetpack/androidx/releases/work)
+- [DataStore releases](https://developer.android.com/jetpack/androidx/releases/datastore)
+- [OkHttp 5.3.0 published Android metadata](https://repo.maven.apache.org/maven2/com/squareup/okhttp3/okhttp-android/5.3.0/okhttp-android-5.3.0.pom)
+- [Serialization 1.9.0 release](https://github.com/Kotlin/kotlinx.serialization/releases/tag/v1.9.0)
