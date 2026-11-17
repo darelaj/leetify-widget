@@ -24,6 +24,7 @@ internal class AccountViewModel(
     private val api: LeetifyApi,
     private val storage: AccountStorage,
     private val io: CoroutineDispatcher = Dispatchers.IO,
+    private val onAccountChanged: suspend () -> Unit = {},
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(AccountState())
     val state = mutableState.asStateFlow()
@@ -116,6 +117,7 @@ internal class AccountViewModel(
         return writes.withLock {
             if (ticket != generation) return@withLock null
             storage.save(AccountCredentials(steamId, effectiveKey))
+            withContext(NonCancellable) { onAccountChanged() }
             effectiveKey != null
         }
     }
@@ -133,7 +135,12 @@ internal class AccountViewModel(
         viewModelScope.launch {
             try {
                 // Finish deletion even if the activity's ViewModel is cleared while resetting.
-                withContext(io + NonCancellable) { writes.withLock { storage.clear() } }
+                withContext(io + NonCancellable) {
+                    writes.withLock {
+                        storage.clear()
+                        onAccountChanged()
+                    }
+                }
                 mutableState.value = AccountState(loading = false)
             } catch (_: AccountStorageException) {
                 mutableState.value = AccountState(loading = false, message = AccountMessage.STORAGE_FAILURE)

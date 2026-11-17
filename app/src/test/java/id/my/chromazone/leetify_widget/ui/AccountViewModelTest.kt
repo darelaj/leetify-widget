@@ -135,6 +135,22 @@ class AccountViewModelTest {
         assertFalse(model.state.value.configured)
     }
 
+    @Test fun notifiesWidgetIntegrationAfterSaveAndReset() = runTest(dispatcher) {
+        val storage = MemoryStorage()
+        var changes = 0
+        val api = LeetifyApi(OkHttpClient.Builder().addInterceptor { response(it.request()) }.build())
+        val model = AccountViewModel(api, storage, dispatcher, onAccountChanged = { changes++ })
+        advanceUntilIdle()
+        model.editSteamId(id)
+        model.verify()
+        advanceUntilIdle()
+        assertEquals(1, changes)
+        model.reset()
+        advanceUntilIdle()
+        assertEquals(2, changes)
+        assertNull(storage.saved)
+    }
+
     private fun model(storage: AccountStorage, reply: (Request) -> Response) = AccountViewModel(
         LeetifyApi(OkHttpClient.Builder().addInterceptor { reply(it.request()) }.build()), storage, dispatcher,
     )
