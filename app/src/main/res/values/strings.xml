@@ -5,9 +5,14 @@
     <string name="steam_id">SteamID64</string>
     <string name="api_key">API key (optional)</string>
     <string name="key_help">Get your own API key at leetify.com/app/developer. Keyless access has stricter rate limits.</string>
-    <string name="verify_profile">Verify profile</string>
+    <string name="verify_profile">Verify and save</string>
     <string name="reset_account">Reset account</string>
-    <string name="account_verified">Profile verified.</string>
+    <string name="account_verified">Profile verified and account settings saved.</string>
+    <string name="account_saved">An account is configured on this device.</string>
+    <string name="saved_key_help">A key is saved securely. Leave the field blank to keep it for the same SteamID64, or enter a replacement.</string>
+    <string name="remove_saved_key">Remove saved key</string>
+    <string name="key_removal_pending">The saved key will be removed after you verify and save without a replacement.</string>
+    <string name="storage_failure">Account settings could not be accessed. Reset and re-enter your account if the problem continues.</string>
     <string name="invalid_steam_id">Enter exactly 17 digits for SteamID64.</string>
     <string name="invalid_key_format">The API key contains invalid characters or whitespace.</string>
     <string name="unauthorized">Access was not authorized. Check or replace your API key.</string>

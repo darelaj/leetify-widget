@@ -31,6 +31,7 @@ internal fun AccountScreen(
     onApiKey: (String) -> Unit,
     onVerify: () -> Unit,
     onReset: () -> Unit,
+    onRemoveKey: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(24.dp),
@@ -38,26 +39,34 @@ internal fun AccountScreen(
         Text(stringResource(R.string.account_title), style = MaterialTheme.typography.headlineMedium)
         Text(stringResource(R.string.account_intro))
         OutlinedTextField(value = state.steamId, onValueChange = onSteamId,
+            enabled = !state.loading,
             label = { Text(stringResource(R.string.steam_id)) }, singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             isError = state.message == AccountMessage.INVALID_ID, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(value = state.apiKey, onValueChange = onApiKey,
+            enabled = !state.loading,
             label = { Text(stringResource(R.string.api_key)) }, singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
             isError = state.message == AccountMessage.INVALID_KEY_FORMAT, modifier = Modifier.fillMaxWidth())
         Text(stringResource(R.string.key_help), style = MaterialTheme.typography.bodySmall)
-        Button(onClick = onVerify, enabled = !state.busy) { Text(stringResource(R.string.verify_profile)) }
-        if (state.busy) CircularProgressIndicator()
+        if (state.configured) Text(stringResource(R.string.account_saved))
+        if (state.hasSavedKey) {
+            Text(stringResource(if (state.removeSavedKey) R.string.key_removal_pending else R.string.saved_key_help))
+            TextButton(onClick = onRemoveKey, enabled = !state.loading) { Text(stringResource(R.string.remove_saved_key)) }
+        }
+        Button(onClick = onVerify, enabled = !state.busy && !state.loading) { Text(stringResource(R.string.verify_profile)) }
+        if (state.busy || state.loading) CircularProgressIndicator()
         state.message?.let { message ->
             Text(stringResource(message.textResource()), modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
         }
-        TextButton(onClick = onReset) { Text(stringResource(R.string.reset_account)) }
+        TextButton(onClick = onReset, enabled = !state.loading) { Text(stringResource(R.string.reset_account)) }
     }
 }
 
 private fun AccountMessage.textResource(): Int = when (this) {
     AccountMessage.VERIFIED -> R.string.account_verified
+    AccountMessage.STORAGE_FAILURE -> R.string.storage_failure
     AccountMessage.INVALID_ID -> R.string.invalid_steam_id
     AccountMessage.INVALID_KEY_FORMAT -> R.string.invalid_key_format
     AccountMessage.UNAUTHORIZED -> R.string.unauthorized

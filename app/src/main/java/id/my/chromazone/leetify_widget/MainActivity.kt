@@ -14,6 +14,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import id.my.chromazone.leetify_widget.data.LeetifyApi
+import id.my.chromazone.leetify_widget.data.PreferencesAccountStorage
+import id.my.chromazone.leetify_widget.data.accountDataStore
 import id.my.chromazone.leetify_widget.ui.AccountScreen
 import id.my.chromazone.leetify_widget.ui.AccountViewModel
 import id.my.chromazone.leetify_widget.ui.theme.LeetifywidgetTheme
@@ -23,7 +25,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val model = ViewModelProvider(this, viewModelFactory {
-            initializer { AccountViewModel(LeetifyApi()) }
+            initializer { AccountViewModel(LeetifyApi(), PreferencesAccountStorage(applicationContext.accountDataStore)) }
         })[AccountViewModel::class.java]
         setContent {
             LeetifywidgetTheme {
@@ -35,6 +37,7 @@ class MainActivity : ComponentActivity() {
                         onApiKey = model::editApiKey,
                         onVerify = model::verify,
                         onReset = model::reset,
+                        onRemoveKey = model::removeSavedKey,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -42,4 +45,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
