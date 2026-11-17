@@ -56,6 +56,7 @@ On another machine, resolve them through that environment's skills catalog or `$
 
 - Preserve minSdk 24 unless explicitly changed. Inspect Gradle/version catalog and SDK/JDK compatibility before adding dependencies; do not upgrade tools speculatively.
 - Use Compose for activity UI, Glance for widgets, and WorkManager for deferrable refresh. Ordinary Compose UI composables are not directly usable as Glance widgets.
+- Follow current Android development practices: hoisted immutable UI state, ViewModel state ownership, lifecycle-aware Flow collection, and background I/O. Keep every data class in its own file and keep mapping/validation logic separate. Favor clean, readable code over extra architecture layers.
 - Share requests across widget instances. Background work is inexact; default to hourly with network constraints and bounded retries. Honor Retry-After when supplied. Never promise real-time monitoring.
 - Prefer an in-memory Canvas bitmap for a small static chart once its data is verified.
 - Typical local checks from the repository root in PowerShell:
