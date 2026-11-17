@@ -1,5 +1,10 @@
 <resources>
     <string name="app_name">leetify-widget</string>
+    <string name="widget_title">CS Stats</string>
+    <string name="widget_description">Aim, Utility, Leetify Rating, Premier rating, and recent match results.</string>
+    <string name="widget_setup">Set up your account to see stats.</string>
+    <string name="widget_settings">Account settings</string>
+    <string name="widget_preview_metrics">Aim · Utility · Leetify Rating · Premier</string>
     <string name="account_title">Account setup</string>
     <string name="account_intro">Enter your SteamID64 to check your Counter-Strike profile. You need a registered, accessible Leetify account. Never enter your Steam password.</string>
     <string name="steam_id">SteamID64</string>
