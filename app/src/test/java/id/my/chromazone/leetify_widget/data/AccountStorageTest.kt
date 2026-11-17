@@ -44,10 +44,13 @@ class AccountStorageTest {
             storage.save(AccountCredentials("76561190000000000", "synthetic-secret"))
             assertEquals("synthetic-secret", storage.load()!!.apiKey)
             assertFalse(file.readText(Charsets.ISO_8859_1).contains("synthetic-secret"))
-            assertEquals(2, store.data.first().asMap().size)
+            assertEquals(3, store.data.first().asMap().size)
+            val firstRevision = storage.load()!!.revision
+            assertTrue(firstRevision.isNotBlank())
             storage.save(AccountCredentials("76561190000000001", "replacement"))
             assertEquals("76561190000000001", storage.load()!!.steamId)
             assertEquals("replacement", storage.load()!!.apiKey)
+            assertNotEquals(firstRevision, storage.load()!!.revision)
             storage.save(AccountCredentials("76561190000000001", null))
             assertNull(storage.load()!!.apiKey)
             store.edit { it[byteArrayPreferencesKey("encrypted_api_key")] = byteArrayOf(1) }

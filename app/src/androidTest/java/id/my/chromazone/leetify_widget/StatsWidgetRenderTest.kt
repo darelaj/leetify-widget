@@ -26,9 +26,10 @@ class StatsWidgetRenderTest {
             val base = instrumentation.targetContext
             val configuration = Configuration(base.resources.configuration).apply {
                 uiMode = if (dark) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
+                fontScale = 1.3f
             }
             val context = base.createConfigurationContext(configuration)
-            for (size in listOf(DpSize(200.dp, 180.dp), DpSize(280.dp, 220.dp))) {
+            for (size in listOf(DpSize(200.dp, 220.dp), DpSize(280.dp, 260.dp))) {
                 val snapshot = WidgetSnapshot(WidgetStatus.READY,
                     PlayerProfile("76561190000000000", "Synthetic", 61.3, 0.0, -2.12, null,
                         listOf(RecentMatch("synthetic", null, null, MatchOutcome.DRAW))), 0L)
@@ -51,7 +52,7 @@ class StatsWidgetRenderTest {
     @Test fun setupSnapshotOffersSettingsWithoutStats() = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
-        val views = StatsWidget().compose(context, size = DpSize(200.dp, 180.dp))
+        val views = StatsWidget().compose(context, size = DpSize(200.dp, 220.dp))
         instrumentation.runOnMainSync {
             val text = textOf(views.apply(context, FrameLayout(context)))
             assertTrue(text.contains("Set up your account"))

@@ -19,6 +19,7 @@ import id.my.chromazone.leetify_widget.data.accountDataStore
 import id.my.chromazone.leetify_widget.ui.AccountScreen
 import id.my.chromazone.leetify_widget.ui.AccountViewModel
 import id.my.chromazone.leetify_widget.ui.theme.LeetifywidgetTheme
+import id.my.chromazone.leetify_widget.widget.WidgetUpdates
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,6 +32,7 @@ class MainActivity : ComponentActivity() {
                     AccountViewModel(
                         api = LeetifyApi(),
                         storage = PreferencesAccountStorage(applicationContext.accountDataStore),
+                        onAccountChanged = { WidgetUpdates.accountChanged(applicationContext) },
                     )
                 }
             },

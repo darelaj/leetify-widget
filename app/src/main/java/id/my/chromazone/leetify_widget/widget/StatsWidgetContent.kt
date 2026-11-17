@@ -2,7 +2,7 @@ package id.my.chromazone.leetify_widget.widget
 
 import android.content.Intent
 import android.content.res.Configuration
-import android.net.Uri
+import androidx.core.net.toUri
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -53,24 +53,32 @@ internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
             Text(
                 context.getString(R.string.widget_title),
                 modifier = GlanceModifier.defaultWeight(),
+                maxLines = 1,
                 style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 14.sp, fontWeight = FontWeight.Bold),
             )
             Image(
                 provider = ImageProvider(if (dark) R.drawable.leetify_badge_white else R.drawable.leetify_badge_black),
                 contentDescription = context.getString(R.string.widget_attribution),
                 modifier = GlanceModifier.size(96.dp, 40.dp)
-                    .clickable(actionStartActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://leetify.com/")))),
+                    .clickable(actionStartActivity(Intent(Intent.ACTION_VIEW, "https://leetify.com/".toUri()))),
             )
         }
         val profile = snapshot.profile
         if (snapshot.status == WidgetStatus.READY && profile != null) {
-            Row(GlanceModifier.fillMaxWidth()) {
-                Column(GlanceModifier.defaultWeight()) { Metric(R.string.metric_aim, profile.aim, 1, expanded) }
-                Column(GlanceModifier.defaultWeight()) { Metric(R.string.metric_utility, profile.utility, 1, expanded) }
-            }
-            Row(GlanceModifier.fillMaxWidth()) {
-                Column(GlanceModifier.defaultWeight()) { Metric(R.string.metric_leetify, profile.leetifyRating, 2, expanded) }
-                Column(GlanceModifier.defaultWeight()) { Metric(R.string.metric_premier, profile.premierRating, 0, expanded) }
+            if (!expanded && context.resources.configuration.fontScale >= 1.2f) {
+                CompactMetric(R.string.metric_aim, profile.aim, 1)
+                CompactMetric(R.string.metric_utility, profile.utility, 1)
+                CompactMetric(R.string.metric_leetify, profile.leetifyRating, 2)
+                CompactMetric(R.string.metric_premier, profile.premierRating, 0)
+            } else {
+                Row(GlanceModifier.fillMaxWidth()) {
+                    Column(GlanceModifier.defaultWeight()) { Metric(R.string.metric_aim, profile.aim, 1, expanded) }
+                    Column(GlanceModifier.defaultWeight()) { Metric(R.string.metric_utility, profile.utility, 1, expanded) }
+                }
+                Row(GlanceModifier.fillMaxWidth()) {
+                    Column(GlanceModifier.defaultWeight()) { Metric(R.string.metric_leetify, profile.leetifyRating, 2, expanded) }
+                    Column(GlanceModifier.defaultWeight()) { Metric(R.string.metric_premier, profile.premierRating, 0, expanded) }
+                }
             }
             Row {
                 Text(
@@ -110,13 +118,21 @@ internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
                 style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold))
             Spacer(GlanceModifier.defaultWeight())
             val destination = if (profile != null) {
-                Intent(Intent.ACTION_VIEW, Uri.parse("https://leetify.com/app/profile/${profile.steamId}"))
+                Intent(Intent.ACTION_VIEW, "https://leetify.com/app/profile/${profile.steamId}".toUri())
             } else Intent(context, MainActivity::class.java)
             Text(context.getString(if (profile != null) R.string.widget_source else R.string.widget_settings),
                 modifier = GlanceModifier.clickable(actionStartActivity(destination)),
                 style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold))
         }
     }
+}
+
+@Composable
+private fun CompactMetric(@StringRes label: Int, value: Double?, decimals: Int) {
+    Text(
+        text = "${LocalContext.current.getString(label)}: ${formatWidgetRating(value, decimals)}",
+        style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 12.sp),
+    )
 }
 
 @Composable

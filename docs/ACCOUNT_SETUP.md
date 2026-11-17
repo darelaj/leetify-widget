@@ -17,6 +17,8 @@ The activity now hosts a stateless Material 3 Compose form backed by a ViewModel
 
 Preferences DataStore writes `files/datastore/account.preferences_pb`, containing the SteamID64 and optional encrypted API key. AES-256-GCM encryption uses a fresh 12-byte random IV and an Android Keystore key; only IV and authenticated ciphertext are written. The key's hardware backing depends on the device and is not promised by the app. Models containing raw credentials have redacted `toString` implementations.
 
+The stats-widget milestone adds a configuration revision to this file and wires account changes/reset to clear all bound widget instances. See [stats-widget behavior](STATS_WIDGET.md) for publication locking and revision checks.
+
 Legacy backup rules exclude the whole account file. Android 12+ rules exclude it from cloud backup and device transfer. This avoids transferring ciphertext without its Keystore key and keeps the account ID out of those backups too. Removing the saved API key removes its ciphertext; reset also removes the app's Keystore alias. No plaintext fallback is allowed if decryption fails: show a storage error and let reset/re-entry recover. A persistent filesystem or Keystore failure can still make reset fail and is reported explicitly.
 
 References: [Android Keystore key generation](https://developer.android.com/reference/android/security/keystore/KeyGenParameterSpec), [backup exclusions](https://developer.android.com/identity/data/autobackup), and [lifecycle-aware Compose state](https://developer.android.com/develop/ui/compose/state).
