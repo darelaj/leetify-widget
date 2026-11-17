@@ -1,0 +1,18 @@
+{
+  "steam64_id": "76561190000000000",
+  "name": "Synthetic Player",
+  "rating": {"aim": 61.25, "utility": 0, "ct_leetify": 0.12},
+  "ranks": {"leetify": -2.12, "premier": null},
+  "recent_matches": [
+    {"id": "old", "finished_at": "2026-11-01T10:00:00Z", "outcome": "win"},
+    {"id": "duplicate", "finished_at": "2026-11-04T10:00:00Z", "outcome": "loss"},
+    {"id": "newest", "finished_at": "2026-11-06T12:00:00+02:00", "outcome": "win", "map_name": "de_nuke"},
+    {"id": "duplicate", "finished_at": "2026-11-05T10:00:00Z", "outcome": "draw"},
+    {"id": "unknown", "finished_at": "2026-11-03T10:00:00Z", "outcome": "abandoned"},
+    {"id": "fifth", "finished_at": "2026-11-02T10:00:00Z", "outcome": "loss"},
+    {"id": "bad-date", "finished_at": "not-a-date", "outcome": null},
+    {"finished_at": "2026-11-07T10:00:00Z", "outcome": "win"},
+    null
+  ],
+  "future_field": {"ignored": true}
+}

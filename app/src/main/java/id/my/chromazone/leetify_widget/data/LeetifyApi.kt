@@ -13,7 +13,7 @@ import okhttp3.Request
 internal class LeetifyApi(private val client: OkHttpClient = defaultClient()) {
     // Blocking by design: call from a worker or Dispatchers.IO, never the UI thread.
     @WorkerThread
-    fun fetchProfile(steamId: String, apiKey: String? = null): JsonObject {
+    fun fetchProfile(steamId: String, apiKey: String? = null): PlayerProfile {
         require(steamId.matches(Regex("[0-9]{17}"))) { "Enter a 17-digit SteamID64" }
         return request("v3/profile", apiKey, steamId) { response ->
             val body = response.body
@@ -21,8 +21,9 @@ internal class LeetifyApi(private val client: OkHttpClient = defaultClient()) {
             val source = body.source()
             if (source.request(MAX_BODY_BYTES + 1)) throw IOException("Response too large")
             try {
-                Json.parseToJsonElement(source.readUtf8()) as? JsonObject
+                val profile = Json.parseToJsonElement(source.readUtf8()) as? JsonObject
                     ?: throw IOException("Expected a profile object")
+                profile.toPlayerProfile(steamId)
             } catch (_: SerializationException) {
                 throw IOException("Invalid profile response")
             }

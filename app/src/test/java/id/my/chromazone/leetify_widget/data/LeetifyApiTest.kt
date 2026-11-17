@@ -19,7 +19,7 @@ class LeetifyApiTest {
             requests += request
             response(request, body = """{"rating":{"aim":61},"extra":"ignored"}""")
         }
-        assertTrue(api.fetchProfile(steamId, "synthetic-key").containsKey("rating"))
+        assertEquals(61.0, api.fetchProfile(steamId, "synthetic-key").aim!!, 0.0)
         api.fetchProfile(steamId)
         assertEquals(2, requests.size)
         assertEquals("https", requests[0].url.scheme)
