@@ -51,6 +51,7 @@ import java.util.Date
 internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
     val context = LocalContext.current
     val short = LocalSize.current.height < 220.dp
+    val roomyShort = LocalSize.current.isRoomyShort()
     val expanded = !short && LocalSize.current.width >= 280.dp
     val compactLargeText = !short && !expanded && context.resources.configuration.fontScale >= 1.2f
     val tightExpanded = expanded && LocalSize.current.width < 320.dp &&
@@ -60,13 +61,13 @@ internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
     Column(
         modifier = GlanceModifier.fillMaxSize().appWidgetBackground()
             .background(GlanceTheme.colors.widgetBackground).cornerRadius(20.dp)
-            .padding(horizontal = if (short) 6.dp else if (compactLargeText) 8.dp else 10.dp,
-                vertical = if (short) 4.dp else if (compactLargeText) 8.dp else 10.dp),
+            .padding(horizontal = if (short && !roomyShort) 6.dp else if (compactLargeText) 8.dp else 10.dp,
+                vertical = if (roomyShort) 6.dp else if (short) 4.dp else if (compactLargeText) 8.dp else 10.dp),
     ) {
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             if (short && profile != null) {
                 RecentResults(profile.recentMatches, expanded = false, dark = dark,
-                    modifier = GlanceModifier.defaultWeight(), stacked = true)
+                    modifier = GlanceModifier.defaultWeight(), stacked = !roomyShort)
             } else Text(
                 context.getString(R.string.widget_title),
                 modifier = GlanceModifier.defaultWeight(),
@@ -83,15 +84,16 @@ internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
                 provider = ImageProvider(if (dark) R.drawable.leetify_badge_white else R.drawable.leetify_badge_black),
                 contentDescription = context.getString(R.string.widget_attribution),
                 modifier = (when {
-                    short -> GlanceModifier.size(74.dp, 31.dp)
-                    compactLargeText -> GlanceModifier.size(84.dp, 35.dp)
+                    short && !roomyShort -> GlanceModifier.size(74.dp, 31.dp)
+                    roomyShort || compactLargeText -> GlanceModifier.size(84.dp, 35.dp)
                     else -> GlanceModifier.size(96.dp, 40.dp)
                 })
                     .clickable(actionStartActivity(Intent(Intent.ACTION_VIEW, "https://leetify.com/".toUri()))),
             )
         }
         if (profile != null) {
-            Spacer(GlanceModifier.height(if (short) 1.dp else if (compactLargeText || tightExpanded) 2.dp else 6.dp))
+            Spacer(GlanceModifier.height(if (roomyShort) 4.dp else if (short) 1.dp
+                else if (compactLargeText || tightExpanded) 2.dp else 6.dp))
             if (compactLargeText) {
                 Column(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
                     CompactMetric(R.string.metric_aim, profile.aim, 1)
@@ -105,20 +107,21 @@ internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
                     Spacer(GlanceModifier.width(6.dp))
                     Metric(R.string.metric_utility, profile.utility, 1, expanded, GlanceModifier.defaultWeight())
                 }
-                Spacer(GlanceModifier.height(if (short) 3.dp else 6.dp))
+                Spacer(GlanceModifier.height(if (short && !roomyShort) 3.dp else 6.dp))
                 Row(GlanceModifier.fillMaxWidth().defaultWeight()) {
                     Metric(R.string.metric_leetify, profile.leetifyRating, 2, expanded, GlanceModifier.defaultWeight())
                     Spacer(GlanceModifier.width(6.dp))
                     Metric(R.string.metric_premier, profile.premierRating, 0, expanded, GlanceModifier.defaultWeight())
                 }
             }
-            Spacer(GlanceModifier.height(if (short) 1.dp else if (compactLargeText || tightExpanded) 2.dp else 6.dp))
+            Spacer(GlanceModifier.height(if (roomyShort) 3.dp else if (short) 1.dp
+                else if (compactLargeText || tightExpanded) 2.dp else 6.dp))
             if (!short) RecentResults(profile.recentMatches, expanded, dark)
             snapshot.fetchedAtMillis?.let {
                 val date = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(it))
                 Text(context.getString(R.string.widget_updated, date),
                     maxLines = 1,
-                    style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 9.sp))
+                    style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = if (roomyShort) 10.sp else 9.sp))
             }
         } else {
             val message = when (snapshot.status) {
@@ -133,13 +136,14 @@ internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
             }
         }
         Spacer(GlanceModifier.fillMaxWidth().height(1.dp).background(GlanceTheme.colors.surfaceVariant))
-        val actionPadding = if (short) 1.dp else if (compactLargeText) 2.dp else 4.dp
+        val actionPadding = if (roomyShort || compactLargeText) 2.dp else if (short) 1.dp else 4.dp
+        val actionTextSize = if (roomyShort) 12.sp else 11.sp
         Row(GlanceModifier.fillMaxWidth().padding(top = actionPadding), verticalAlignment = Alignment.CenterVertically) {
             Text(context.getString(R.string.widget_refresh),
                 modifier = GlanceModifier.background(GlanceTheme.colors.primaryContainer).cornerRadius(8.dp)
                     .padding(horizontal = 6.dp, vertical = actionPadding).clickable(actionSendBroadcast(
                     Intent(context, StatsWidgetReceiver::class.java).setAction(WidgetUpdates.REFRESH_ACTION))),
-                style = TextStyle(color = GlanceTheme.colors.onPrimaryContainer, fontSize = 11.sp, fontWeight = FontWeight.Bold))
+                style = TextStyle(color = GlanceTheme.colors.onPrimaryContainer, fontSize = actionTextSize, fontWeight = FontWeight.Bold))
             Spacer(GlanceModifier.defaultWeight())
             Spacer(GlanceModifier.width(6.dp))
             val destination = if (profile != null) {
@@ -148,7 +152,7 @@ internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
             Text(context.getString(if (profile != null) R.string.widget_source else R.string.widget_settings),
                 modifier = GlanceModifier.padding(vertical = actionPadding)
                     .clickable(actionStartActivity(destination)),
-                style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold))
+                style = TextStyle(color = GlanceTheme.colors.primary, fontSize = actionTextSize, fontWeight = FontWeight.Bold))
         }
     }
 }
@@ -162,6 +166,7 @@ private fun RecentResults(
     stacked: Boolean = false,
 ) {
     val wide = expanded && LocalSize.current.width >= 320.dp
+    val roomyShort = LocalSize.current.isRoomyShort()
     val visibleMatches = matches.take(if (expanded) MAX_RECENT_MATCHES else 5)
     val label = LocalContext.current.getString(
         when {
@@ -172,7 +177,7 @@ private fun RecentResults(
     )
     val labelStyle = TextStyle(
         color = GlanceTheme.colors.onSurfaceVariant,
-        fontSize = if (wide) 12.sp else 10.sp,
+        fontSize = if (wide || roomyShort) 12.sp else 10.sp,
         fontWeight = FontWeight.Bold,
     )
     if (wide || stacked) {
@@ -186,7 +191,7 @@ private fun RecentResults(
     } else {
         Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(label, modifier = GlanceModifier.defaultWeight(), maxLines = 1, style = labelStyle)
-            if (visibleMatches.isNotEmpty()) ResultChips(visibleMatches, wide, dark)
+            if (visibleMatches.isNotEmpty()) ResultChips(visibleMatches, roomyShort, dark)
         }
     }
 }
@@ -242,6 +247,8 @@ private fun CompactMetric(@StringRes label: Int, value: Double?, decimals: Int, 
 @Composable
 private fun Metric(@StringRes label: Int, value: Double?, decimals: Int, expanded: Boolean, modifier: GlanceModifier) {
     val short = LocalSize.current.height < 220.dp
+    val roomyShort = LocalSize.current.isRoomyShort()
+    val largeText = LocalContext.current.resources.configuration.fontScale >= 1.2f
     Column(
         modifier.fillMaxHeight().background(GlanceTheme.colors.surfaceVariant).cornerRadius(10.dp)
             .padding(horizontal = if (expanded) 10.dp else 6.dp),
@@ -253,13 +260,18 @@ private fun Metric(@StringRes label: Int, value: Double?, decimals: Int, expande
         }
         Text(LocalContext.current.getString(label), maxLines = 1,
             style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant,
-                fontSize = if (short) 9.sp else if (expanded) 12.sp else 10.sp))
-        val fontSize = if (short) 12 else if (expanded) 23 else 16
+                fontSize = if (roomyShort) 11.sp else if (short) 9.sp else if (expanded) 12.sp else 10.sp))
+        val fontSize = when {
+            roomyShort -> if (largeText) 17 else 21
+            short -> 12
+            expanded -> 23
+            else -> 16
+        }
         val band = if (label == R.string.metric_premier) premierRatingBand(value) else null
         if (band != null) {
-            Spacer(GlanceModifier.height(if (short) 2.dp else if (expanded) 6.dp else 4.dp))
+            Spacer(GlanceModifier.height(if (short && !roomyShort) 2.dp else if (expanded) 6.dp else 4.dp))
             val badgeSize = if (expanded && LocalSize.current.width < 320.dp) 19 else fontSize
-            PremierRatingBadge(formatWidgetRating(value, decimals), band, badgeSize, dense = short)
+            PremierRatingBadge(formatWidgetRating(value, decimals), band, badgeSize, dense = short && !roomyShort)
         } else {
             if (expanded) Spacer(GlanceModifier.height(2.dp))
             Text(formatWidgetRating(value, decimals), maxLines = 1,
@@ -268,3 +280,6 @@ private fun Metric(@StringRes label: Int, value: Double?, decimals: Int, expande
         }
     }
 }
+
+private fun androidx.compose.ui.unit.DpSize.isRoomyShort(): Boolean =
+    width >= 320.dp && height >= 208.dp && height < 220.dp

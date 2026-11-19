@@ -15,7 +15,7 @@ class StatsWidget internal constructor(
 ) : GlanceAppWidget() {
     override val stateDefinition = null
     override val sizeMode = SizeMode.Responsive(
-        if (shortOnly) setOf(DpSize(280.dp, 132.dp), DpSize(280.dp, 180.dp))
+        if (shortOnly) setOf(DpSize(280.dp, 132.dp), DpSize(280.dp, 180.dp), DpSize(320.dp, 208.dp))
         else setOf(shortSize, DpSize(200.dp, 236.dp), DpSize(280.dp, 260.dp)),
     )
 
