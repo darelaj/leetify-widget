@@ -5,7 +5,10 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import androidx.work.WorkManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 // Native lifecycle dispatch; Glance composes snapshots without a long-lived widget session.
 class StatsWidgetReceiver : AppWidgetProvider() {
@@ -19,11 +22,21 @@ class StatsWidgetReceiver : AppWidgetProvider() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == WidgetUpdates.REFRESH_ACTION) WidgetUpdates.enqueue(context)
-        else super.onReceive(context, intent)
+        if (intent.action != WidgetUpdates.REFRESH_ACTION) {
+            super.onReceive(context, intent)
+            return
+        }
+        val pending = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                withTimeoutOrNull(8_000) { WidgetUpdates.manualRefresh(context.applicationContext) }
+            } finally {
+                pending.finish()
+            }
+        }
     }
 
     override fun onDisabled(context: Context) {
-        WorkManager.getInstance(context).cancelUniqueWork(WidgetUpdates.WORK_NAME)
+        WidgetRefreshSchedule.cancel(context)
     }
 }

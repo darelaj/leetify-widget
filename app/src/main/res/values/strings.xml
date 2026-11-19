@@ -7,6 +7,7 @@
     <string name="widget_preview_metrics">Aim · Utility · Leetify Rating · Premier</string>
     <string name="widget_refresh">Refresh</string>
     <string name="widget_loading">Updating stats…</string>
+    <string name="widget_waiting">Refresh queued. Waiting for connectivity or Android scheduling.</string>
     <string name="widget_source">View on Leetify</string>
     <string name="widget_attribution">Data Provided by Leetify</string>
     <string name="widget_updated">Fetched %1$s</string>
@@ -21,6 +22,7 @@
     <string name="steam_id">SteamID64</string>
     <string name="api_key">API key (optional)</string>
     <string name="key_help">Get your own API key at leetify.com/app/developer. Keyless access has stricter rate limits.</string>
+    <string name="refresh_schedule_help">Widgets refresh about hourly while present. Android may delay updates for connectivity, Doze, or battery saving. Refresh has a shared 60-second cooldown; server-requested waits may be longer.</string>
     <string name="verify_profile">Verify and save</string>
     <string name="reset_account">Reset account</string>
     <string name="account_verified">Profile verified and account settings saved.</string>

@@ -65,6 +65,7 @@ internal fun AccountScreen(
             modifier = Modifier.fillMaxWidth(),
         )
         Text(stringResource(R.string.key_help), style = MaterialTheme.typography.bodySmall)
+        Text(stringResource(R.string.refresh_schedule_help), style = MaterialTheme.typography.bodySmall)
         if (state.configured) {
             Text(stringResource(R.string.account_saved))
         }
