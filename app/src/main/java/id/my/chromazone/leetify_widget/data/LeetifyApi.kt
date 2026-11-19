@@ -90,10 +90,12 @@ internal class LeetifyApi(
         private const val BASE_URL = "https://api-public.cs-prod.leetify.com/"
         private const val MAX_BODY_BYTES = 1_048_576L
 
-        private fun defaultClient() = OkHttpClient.Builder()
+        fun forAccountSetup() = LeetifyApi(defaultClient(callTimeoutSeconds = 8))
+
+        private fun defaultClient(callTimeoutSeconds: Long = 20) = OkHttpClient.Builder()
             .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(15, TimeUnit.SECONDS)
-            .callTimeout(20, TimeUnit.SECONDS)
+            .callTimeout(callTimeoutSeconds, TimeUnit.SECONDS)
             .retryOnConnectionFailure(false)
             .followRedirects(false)
             .followSslRedirects(false)

@@ -78,19 +78,9 @@ internal class AccountViewModel(
         mutableState.value = input.copy(busy = true, message = null)
         verification = viewModelScope.launch {
             try {
-                val hasSavedKey = withContext(io) {
+                withContext(io) {
                     verifyAndSave(input, steamId, key, ticket)
-                } ?: return@launch
-                if (ticket != generation) return@launch
-
-                mutableState.value = state.value.copy(
-                    busy = false,
-                    apiKey = "",
-                    message = AccountMessage.VERIFIED,
-                    configured = true,
-                    hasSavedKey = hasSavedKey,
-                    removeSavedKey = false,
-                )
+                }
             } catch (_: AccountStorageException) {
                 showFailure(ticket, AccountMessage.STORAGE_FAILURE)
             } catch (error: ProfileApiException) {
@@ -104,7 +94,7 @@ internal class AccountViewModel(
         steamId: String,
         key: String,
         ticket: Long,
-    ): Boolean? {
+    ) {
         val saved = storage.load()
         val effectiveKey = key.ifEmpty { null } ?: saved?.apiKey?.takeIf {
             !input.removeSavedKey && saved.steamId == steamId
@@ -114,11 +104,24 @@ internal class AccountViewModel(
         api.fetchProfile(steamId, effectiveKey)
         currentCoroutineContext().ensureActive()
 
-        return writes.withLock {
-            if (ticket != generation) return@withLock null
+        writes.withLock {
+            if (ticket != generation) return@withLock
             storage.save(AccountCredentials(steamId, effectiveKey))
-            withContext(NonCancellable) { onAccountChanged() }
-            effectiveKey != null
+            withContext(NonCancellable) {
+                withContext(Dispatchers.Main.immediate) {
+                    if (ticket == generation) {
+                        mutableState.value = state.value.copy(
+                            busy = false,
+                            apiKey = "",
+                            message = AccountMessage.VERIFIED,
+                            configured = true,
+                            hasSavedKey = effectiveKey != null,
+                            removeSavedKey = false,
+                        )
+                    }
+                }
+                onAccountChanged()
+            }
         }
     }
 

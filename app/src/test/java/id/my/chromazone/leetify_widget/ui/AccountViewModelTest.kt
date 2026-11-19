@@ -151,6 +151,25 @@ class AccountViewModelTest {
         assertNull(storage.saved)
     }
 
+    @Test fun confirmsSaveBeforeWidgetUpdateCompletes() = runTest(dispatcher) {
+        val storage = MemoryStorage()
+        val widgetUpdate = CompletableDeferred<Unit>()
+        val api = LeetifyApi(OkHttpClient.Builder().addInterceptor { response(it.request()) }.build())
+        val model = AccountViewModel(api, storage, dispatcher, onAccountChanged = { widgetUpdate.await() })
+        advanceUntilIdle()
+        model.editSteamId(id)
+        model.verify()
+        runCurrent()
+        try {
+            assertEquals(id, storage.saved?.steamId)
+            assertEquals(AccountMessage.VERIFIED, model.state.value.message)
+            assertFalse(model.state.value.busy)
+        } finally {
+            widgetUpdate.complete(Unit)
+        }
+        advanceUntilIdle()
+    }
+
     private fun model(storage: AccountStorage, reply: (Request) -> Response) = AccountViewModel(
         LeetifyApi(OkHttpClient.Builder().addInterceptor { reply(it.request()) }.build()), storage, dispatcher,
     )
