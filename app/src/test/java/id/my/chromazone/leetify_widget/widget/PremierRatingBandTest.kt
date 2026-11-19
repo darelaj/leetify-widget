@@ -12,15 +12,14 @@ class PremierRatingBandTest {
         for (threshold in 5_000..30_000 step 5_000) {
             assertNotEquals(premierRatingBand((threshold - 1).toDouble()), premierRatingBand(threshold.toDouble()))
         }
-        assertEquals(premierRatingBand(10_000.0), premierRatingBand(13_873.0))
-        assertEquals(premierRatingBand(30_000.0), premierRatingBand(35_000.0))
+        assertEquals(PremierRatingBand.BLUE, premierRatingBand(13_873.0))
+        assertEquals(PremierRatingBand.GOLD, premierRatingBand(35_000.0))
     }
 
     @Test fun ratingTextHasReadableContrastInEveryTier() {
         for (rating in 0..30_000 step 5_000) {
             val band = checkNotNull(premierRatingBand(rating.toDouble()))
-            val contrast = (premierRatingInk(band).luminance() + 0.05f) /
-                (premierRatingSurface(band).luminance() + 0.05f)
+            val contrast = (band.ink.luminance() + 0.05f) / (band.surface.luminance() + 0.05f)
             assertTrue("Rating $rating has contrast $contrast", contrast >= 4.5f)
         }
     }

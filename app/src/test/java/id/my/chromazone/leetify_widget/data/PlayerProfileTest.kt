@@ -10,7 +10,7 @@ class PlayerProfileTest {
     private val steamId = "76561190000000000"
 
     @Test
-    fun mapsExactProfileFieldsAndFiveLatestUniqueResults() {
+    fun mapsExactProfileFieldsAndUniqueResults() {
         val fixture = checkNotNull(javaClass.getResource("/profile-synthetic.json")).readText()
         val profile = parse(fixture)
         assertEquals(steamId, profile.steamId)
@@ -19,10 +19,20 @@ class PlayerProfileTest {
         assertEquals(0.0, profile.utility!!, 0.0)
         assertEquals(-2.12, profile.leetifyRating!!, 0.0)
         assertNull(profile.premierRating)
-        assertEquals(listOf("newest", "duplicate", "unknown", "fifth", "old"), profile.recentMatches.map { it.id })
-        assertEquals(listOf(MatchOutcome.WIN, MatchOutcome.DRAW, MatchOutcome.UNKNOWN, MatchOutcome.LOSS, MatchOutcome.WIN), profile.recentMatches.map { it.outcome })
+        assertEquals(listOf("newest", "duplicate", "unknown", "fifth", "old", "bad-date"), profile.recentMatches.map { it.id })
+        assertEquals(listOf(MatchOutcome.WIN, MatchOutcome.DRAW, MatchOutcome.UNKNOWN, MatchOutcome.LOSS,
+            MatchOutcome.WIN, MatchOutcome.UNKNOWN), profile.recentMatches.map { it.outcome })
         assertEquals("de_nuke", profile.recentMatches.first().mapName)
         assertEquals(1793959200000L, profile.recentMatches.first().finishedAtMillis)
+    }
+
+    @Test
+    fun takesTenNewestMatchesFromLongerProfileResponse() {
+        val rows = (1..12).joinToString { day ->
+            """{"id":"match-$day","finished_at":"2026-11-${day.toString().padStart(2, '0')}T10:00:00Z","outcome":"win"}"""
+        }
+        assertEquals((12 downTo 3).map { "match-$it" },
+            parse("""{"recent_matches":[$rows]}""").recentMatches.map { it.id })
     }
 
     @Test

@@ -1,21 +1,24 @@
 package id.my.chromazone.leetify_widget.widget
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 
-private val goldBand = Color(0xFFFFCF66)
-
-internal fun premierRatingBand(rating: Double?): Color? = when {
-    rating == null || !rating.isFinite() || rating < 0 -> null
-    rating < 5_000 -> Color(0xFF505760)
-    rating < 10_000 -> Color(0xFF25637A)
-    rating < 15_000 -> Color(0xFF294DB8)
-    rating < 20_000 -> Color(0xFF6943A7)
-    rating < 25_000 -> Color(0xFF972B78)
-    rating < 30_000 -> Color(0xFFA93046)
-    else -> goldBand
+internal enum class PremierRatingBand(val surface: Color, val accent: Color, val ink: Color = accent) {
+    SILVER(Color(0xFF3B434B), Color(0xFFB8CAD6)),
+    CYAN(Color(0xFF2D4455), Color(0xFF88BBE0)),
+    BLUE(Color(0xFF1F295D), Color(0xFF687FEC), Color(0xFF7F96FF)),
+    PURPLE(Color(0xFF422258), Color(0xFFBD6BFB), Color(0xFFC679FC)),
+    PINK(Color(0xFF580060), Color(0xFFE615F1), Color(0xFFF65DFA)),
+    RED(Color(0xFF560B0C), Color(0xFFEA4B48), Color(0xFFF66A64)),
+    GOLD(Color(0xFF4B3900), Color(0xFFFED502)),
 }
 
-internal fun premierRatingSurface(band: Color): Color = lerp(Color(0xFF111522), band, 0.34f)
-
-internal fun premierRatingInk(band: Color): Color = lerp(band, Color.White, 0.43f)
+internal fun premierRatingBand(rating: Double?): PremierRatingBand? = when {
+    rating == null || !rating.isFinite() || rating < 0 -> null
+    rating < 5_000 -> PremierRatingBand.SILVER
+    rating < 10_000 -> PremierRatingBand.CYAN
+    rating < 15_000 -> PremierRatingBand.BLUE
+    rating < 20_000 -> PremierRatingBand.PURPLE
+    rating < 25_000 -> PremierRatingBand.PINK
+    rating < 30_000 -> PremierRatingBand.RED
+    else -> PremierRatingBand.GOLD
+}

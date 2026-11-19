@@ -13,6 +13,7 @@
     <string name="widget_attribution">Data Provided by Leetify</string>
     <string name="widget_updated">Fetched %1$s</string>
     <string name="widget_recent">Recent matches</string>
+    <string name="widget_recent_short">Recent</string>
     <string name="widget_no_matches">No recent matches</string>
     <string name="metric_aim">Aim</string>
     <string name="metric_utility">Utility</string>

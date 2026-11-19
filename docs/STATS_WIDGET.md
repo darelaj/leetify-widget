@@ -5,7 +5,7 @@ Implemented on `feat/stats-widget`, 18 November 2026. Add **CS Stats** through a
 ## What it shows
 
 - Aim, Utility, Leetify Rating, and Premier, preserving source scales, signs, and unavailable values.
-- Up to five recent match outcomes as W/L/D/? with color plus text. This is the API's recent-match window across sources, not Premier-only history.
+- Up to ten recent match outcomes in expanded layouts and five in compact layouts, as W/L/D/? with color plus text. Results come from the profile's recent-match window across sources.
 - Successful fetch date/time, distinct from match finish time.
 - Refresh, View on Leetify, and the original theme-appropriate attribution badge linked to Leetify. See [asset provenance](ATTRIBUTION.md).
 - Setup, loading, no matches, unavailable metrics, authentication/access failures, network/timeouts, rate limits, server errors, invalid responses, and inaccessible settings states. Failure snapshots contain no old profile.

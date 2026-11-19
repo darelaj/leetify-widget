@@ -34,9 +34,13 @@ class StatsWidgetRenderTest {
             }
             val context = base.createConfigurationContext(configuration)
             for (size in listOf(DpSize(200.dp, 220.dp), DpSize(280.dp, 260.dp))) {
+                val matches = List(11) { index ->
+                    val outcome = MatchOutcome.entries[index % MatchOutcome.entries.size]
+                    RecentMatch("synthetic-$index", null, null, outcome)
+                }
                 val snapshot = WidgetSnapshot(WidgetStatus.READY,
                     PlayerProfile("76561190000000000", "Synthetic", 61.3, null, -2.12, 13_873.0,
-                        listOf(RecentMatch("synthetic", null, null, MatchOutcome.DRAW))), 0L)
+                        matches), 0L)
                 val views = StatsWidget(snapshot).compose(context, size = size)
                 instrumentation.runOnMainSync {
                     val root = FrameLayout(context)
@@ -54,6 +58,12 @@ class StatsWidgetRenderTest {
                     assertTrue(rating.typeface.isItalic || italicSpan)
                     assertEquals(0, rating.layout.getEllipsisCount(0))
                     assertTrue(rating.height >= rating.lineHeight)
+                    val chips = textViews(root).filter { it.text.toString() in listOf("W", "L", "D", "?") }.toList()
+                    assertEquals(if (size.width >= 280.dp) 10 else 5, chips.size)
+                    for (chip in chips) {
+                        assertTrue("Result ${chip.text} clipped at $size (${chip.width}×${chip.height})",
+                            chip.height >= chip.lineHeight && chip.layout.getEllipsisCount(0) == 0)
+                    }
                     val text = textOf(root)
                     assertTrue(text.contains("Aim"))
                     assertTrue(text.contains("Utility"))
