@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
 // Native lifecycle dispatch; Glance composes snapshots without a long-lived widget session.
-class StatsWidgetReceiver : AppWidgetProvider() {
+open class StatsWidgetReceiver : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         WidgetUpdates.enqueue(context)
@@ -37,6 +37,6 @@ class StatsWidgetReceiver : AppWidgetProvider() {
     }
 
     override fun onDisabled(context: Context) {
-        WidgetRefreshSchedule.cancel(context)
+        if (WidgetUpdates.ids(context).isEmpty()) WidgetRefreshSchedule.cancel(context)
     }
 }

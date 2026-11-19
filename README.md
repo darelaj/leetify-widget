@@ -8,7 +8,7 @@ Stat Peek is an unofficial Counter-Strike home-screen widget for Android 7.0 (AP
 
 Widgets share one refresh about every hour while installed. Android can delay work when the device is offline or saving power. Manual refreshes share a 60-second cooldown, and Leetify may ask the app to wait longer. The separate Premier history widget is [deferred](docs/API_RESEARCH.md#premier-chart-feasibility).
 
-**CS Stats** starts at 4×3 on supported launchers. To use the shorter 4×2 layout, long-press the widget and drag a vertical resize handle until it occupies two rows. The short layout keeps all four ratings, up to five recent results, the fetch time, and both actions. Two rows must provide at least 180 dp of height.
+The widget picker lists **CS Stats** (4 columns × 3 rows) and **CS Stats 4×2** (4 columns × 2 rows). Add the 4×2 entry directly. It keeps all four ratings, up to five recent results, the fetch time, and both actions. Exact dimensions vary by launcher.
 
 ## Privacy
 

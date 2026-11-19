@@ -18,8 +18,10 @@ internal object WidgetUpdates {
     const val WORK_NAME = "stats-widget-refresh"
     const val REFRESH_ACTION = "id.my.chromazone.leetify_widget.REFRESH_STATS"
 
-    fun ids(context: Context): IntArray = AppWidgetManager.getInstance(context)
-        .getAppWidgetIds(ComponentName(context, StatsWidgetReceiver::class.java))
+    fun ids(context: Context): IntArray = AppWidgetManager.getInstance(context).let { manager ->
+        manager.getAppWidgetIds(ComponentName(context, StatsWidgetReceiver::class.java)) +
+            manager.getAppWidgetIds(ComponentName(context, ShortStatsWidgetReceiver::class.java))
+    }
 
     fun enqueue(context: Context) {
         WidgetRefreshSchedule.enqueue(context)
@@ -72,11 +74,13 @@ internal object WidgetUpdates {
 
     suspend fun renderAll(context: Context, snapshot: WidgetSnapshot) {
         val manager = AppWidgetManager.getInstance(context)
+        val shortProvider = ComponentName(context, ShortStatsWidgetReceiver::class.java)
         for (id in ids(context)) {
-            if (manager.getAppWidgetInfo(id) == null) continue
+            val info = manager.getAppWidgetInfo(id) ?: continue
             try {
                 // Fresh composition IDs avoid collisions with a cancelled refresh's Glance cleanup.
-                val views = StatsWidget(snapshot).compose(context, options = manager.getAppWidgetOptions(id))
+                val views = StatsWidget(snapshot, shortOnly = info.provider == shortProvider)
+                    .compose(context, options = manager.getAppWidgetOptions(id))
                 manager.updateAppWidget(id, views)
             } catch (error: IllegalArgumentException) {
                 if (manager.getAppWidgetInfo(id) != null) throw error

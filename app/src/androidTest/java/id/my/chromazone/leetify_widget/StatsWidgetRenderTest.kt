@@ -1,5 +1,8 @@
 package id.my.chromazone.leetify_widget
 
+import android.appwidget.AppWidgetManager
+import android.os.Bundle
+import android.util.SizeF
 import android.content.res.Configuration
 import android.graphics.Rect
 import android.graphics.Typeface
@@ -12,10 +15,12 @@ import android.widget.TextView
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.compose
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import id.my.chromazone.leetify_widget.data.MatchOutcome
 import id.my.chromazone.leetify_widget.data.PlayerProfile
 import id.my.chromazone.leetify_widget.data.RecentMatch
+import id.my.chromazone.leetify_widget.widget.ShortStatsWidgetReceiver
 import id.my.chromazone.leetify_widget.widget.StatsWidget
 import id.my.chromazone.leetify_widget.widget.WidgetSnapshot
 import id.my.chromazone.leetify_widget.widget.WidgetStatus
@@ -24,6 +29,30 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class StatsWidgetRenderTest {
+    @SdkSuppress(minSdkVersion = 31)
+    @Test fun dedicatedPickerEntryTargetsFourColumnsAndTwoRows() = runBlocking {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val provider = AppWidgetManager.getInstance(context).installedProviders
+            .single { it.provider.className == ShortStatsWidgetReceiver::class.java.name }
+        assertEquals("CS Stats 4×2", provider.loadLabel(context.packageManager).toString())
+        assertEquals(4, provider.targetCellWidth)
+        assertEquals(2, provider.targetCellHeight)
+
+        val matches = List(10) { index -> RecentMatch("synthetic-$index", null, null, MatchOutcome.WIN) }
+        val snapshot = WidgetSnapshot(WidgetStatus.READY,
+            PlayerProfile("76561190000000000", "Synthetic", 61.3, 43.0, -2.12, 13_873.0, matches), 0L)
+        val options = Bundle().apply {
+            putParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES, arrayListOf(SizeF(400f, 225f)))
+        }
+        val views = StatsWidget(snapshot, shortOnly = true).compose(context, options = options)
+        instrumentation.runOnMainSync {
+            val root = views.apply(context, FrameLayout(context))
+            assertEquals(5, textViews(root).count { it.text.toString() == "W" })
+            assertFalse(textViews(root).any { it.text.toString() == "CS Stats" })
+        }
+    }
+
     @Test fun compactAndExpandedSnapshotsRenderSourceStatsInBothThemes() = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         for (dark in listOf(false, true)) {

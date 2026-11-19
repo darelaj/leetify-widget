@@ -2,6 +2,7 @@
     <string name="app_name">Stat Peek</string>
     <string name="app_affiliation">Unofficial Counter-Strike widget. Independent of Valve and Leetify.</string>
     <string name="widget_title">CS Stats</string>
+    <string name="short_widget_title">CS Stats 4×2</string>
     <string name="widget_description">Aim, Utility, Leetify Rating, Premier rating, and recent match results.</string>
     <string name="widget_setup">Set up your account to see stats.</string>
     <string name="widget_settings">Account settings</string>
