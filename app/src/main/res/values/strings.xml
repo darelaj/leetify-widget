@@ -25,6 +25,7 @@
     <string name="key_help">Get your own API key at leetify.com/app/developer. Keyless access has stricter rate limits.</string>
     <string name="refresh_schedule_help">Widgets refresh about hourly while present. Android may delay updates for connectivity, Doze, or battery saving. Refresh has a shared 60-second cooldown; server-requested waits may be longer.</string>
     <string name="verify_profile">Verify and save</string>
+    <string name="verifying_profile">Verifying…</string>
     <string name="reset_account">Reset account</string>
     <string name="account_verified">Profile verified and account settings saved.</string>
     <string name="account_saved">An account is configured on this device.</string>

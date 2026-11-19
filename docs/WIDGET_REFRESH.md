@@ -4,7 +4,7 @@ Implemented on `feat/widget-refresh`, 19 November 2026. This completes implement
 
 ## Scheduling
 
-While at least one stats widget exists, a unique WorkManager periodic dispatcher runs about hourly, starting after an hour. It enqueues the same unique one-time refresh used by add, resize, setup, and manual actions. `KEEP` coalesces overlapping requests. Account changes use `REPLACE` and revision checks to invalidate old work. Last-widget removal cancels both unique jobs.
+While at least one stats widget exists, a unique WorkManager periodic dispatcher runs about hourly, starting after an hour. It enqueues the same unique one-time refresh used by add, resize, and manual actions. `KEEP` coalesces overlapping requests. A successful account verification passes the fresh profile to the widgets in memory after checking the saved account revision and cancelling obsolete one-time work. This avoids a second request and updates the widgets even if Android delays their scheduled work. Last-widget removal cancels both unique jobs.
 
 Both requests require `NetworkType.CONNECTED`. WorkManager execution is inexact: connectivity, Doze, battery saving, and Android scheduling can delay it. There is no exact alarm or foreground service. The account screen explains these limits. WorkManager owns job persistence/rescheduling; reboot and force-stop behavior have not been checked on a device in this milestone.
 

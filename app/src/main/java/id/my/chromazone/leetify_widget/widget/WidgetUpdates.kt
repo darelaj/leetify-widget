@@ -4,9 +4,12 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import androidx.glance.appwidget.compose
+import androidx.work.WorkManager
+import androidx.work.await
 import id.my.chromazone.leetify_widget.data.AccountMutationLock
 import id.my.chromazone.leetify_widget.data.AccountStorageException
 import id.my.chromazone.leetify_widget.data.PreferencesAccountStorage
+import id.my.chromazone.leetify_widget.data.VerifiedAccountProfile
 import id.my.chromazone.leetify_widget.data.accountDataStore
 import kotlinx.coroutines.sync.withLock
 import java.io.IOException
@@ -22,20 +25,28 @@ internal object WidgetUpdates {
         WidgetRefreshSchedule.enqueue(context)
     }
 
-    suspend fun accountChanged(context: Context) {
-        AccountMutationLock.mutex.withLock {
+    suspend fun accountChanged(context: Context, verified: VerifiedAccountProfile? = null) {
+        val needsRefresh = AccountMutationLock.mutex.withLock {
             val snapshot = try {
+                val current = PreferencesAccountStorage(context.accountDataStore).load()
+                if (verified != null && current?.revision != verified.accountRevision) return@withLock false
                 RefreshMetadataStore(context.refreshDataStore).resetAccount()
-                if (PreferencesAccountStorage(context.accountDataStore).load() == null) WidgetSnapshot()
-                else WidgetSnapshot(status = WidgetStatus.LOADING)
+                when {
+                    current == null -> WidgetSnapshot()
+                    verified != null -> WidgetSnapshot(WidgetStatus.READY, verified.profile, verified.fetchedAtMillis)
+                    else -> WidgetSnapshot(status = WidgetStatus.WAITING)
+                }
             } catch (_: AccountStorageException) {
                 WidgetSnapshot(status = WidgetStatus.STORAGE_ERROR)
             } catch (_: IOException) {
                 WidgetSnapshot(status = WidgetStatus.STORAGE_ERROR)
             }
+            if (verified != null) WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME).await()
             renderAll(context, snapshot)
+            verified == null
         }
-        WidgetRefreshSchedule.enqueue(context, replace = true)
+        if (needsRefresh) WidgetRefreshSchedule.enqueue(context, replace = true)
+        else WidgetRefreshSchedule.ensureHourly(context)
     }
 
     suspend fun manualRefresh(context: Context) {

@@ -78,7 +78,10 @@ class WidgetRefreshCoordinatorTest {
 
     private class MemoryStorage(var saved: AccountCredentials?) : AccountStorage {
         override suspend fun load() = saved
-        override suspend fun save(account: AccountCredentials) { saved = account }
+        override suspend fun save(account: AccountCredentials): String {
+            saved = account
+            return account.revision
+        }
         override suspend fun clear() { saved = null }
     }
 }

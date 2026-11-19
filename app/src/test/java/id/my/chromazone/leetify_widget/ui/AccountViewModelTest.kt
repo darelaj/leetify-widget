@@ -4,6 +4,7 @@ import id.my.chromazone.leetify_widget.data.AccountCredentials
 import id.my.chromazone.leetify_widget.data.AccountStorage
 import id.my.chromazone.leetify_widget.data.AccountStorageException
 import id.my.chromazone.leetify_widget.data.LeetifyApi
+import id.my.chromazone.leetify_widget.data.VerifiedAccountProfile
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -137,18 +138,41 @@ class AccountViewModelTest {
 
     @Test fun notifiesWidgetIntegrationAfterSaveAndReset() = runTest(dispatcher) {
         val storage = MemoryStorage()
-        var changes = 0
+        val changes = mutableListOf<VerifiedAccountProfile?>()
         val api = LeetifyApi(OkHttpClient.Builder().addInterceptor { response(it.request()) }.build())
-        val model = AccountViewModel(api, storage, dispatcher, onAccountChanged = { changes++ })
+        val model = AccountViewModel(api, storage, dispatcher, onAccountChanged = { changes += it })
         advanceUntilIdle()
         model.editSteamId(id)
         model.verify()
         advanceUntilIdle()
-        assertEquals(1, changes)
+        val verified = requireNotNull(changes.single())
+        assertEquals(storage.saved?.revision, verified.accountRevision)
+        assertEquals(id, verified.profile.steamId)
+        assertTrue(verified.fetchedAtMillis > 0)
         model.reset()
         advanceUntilIdle()
-        assertEquals(2, changes)
+        assertEquals(2, changes.size)
+        assertNull(changes.last())
         assertNull(storage.saved)
+    }
+
+    @Test fun confirmsSaveBeforeWidgetUpdateCompletes() = runTest(dispatcher) {
+        val storage = MemoryStorage()
+        val widgetUpdate = CompletableDeferred<Unit>()
+        val api = LeetifyApi(OkHttpClient.Builder().addInterceptor { response(it.request()) }.build())
+        val model = AccountViewModel(api, storage, dispatcher, onAccountChanged = { widgetUpdate.await() })
+        advanceUntilIdle()
+        model.editSteamId(id)
+        model.verify()
+        runCurrent()
+        try {
+            assertEquals(id, storage.saved?.steamId)
+            assertEquals(AccountMessage.VERIFIED, model.state.value.message)
+            assertFalse(model.state.value.busy)
+        } finally {
+            widgetUpdate.complete(Unit)
+        }
+        advanceUntilIdle()
     }
 
     private fun model(storage: AccountStorage, reply: (Request) -> Response) = AccountViewModel(
@@ -166,7 +190,12 @@ class AccountViewModelTest {
             if (unreadable) throw AccountStorageException()
             return saved
         }
-        override suspend fun save(account: AccountCredentials) { beforeSave(); saved = account }
+        override suspend fun save(account: AccountCredentials): String {
+            beforeSave()
+            val revision = "saved-revision"
+            saved = AccountCredentials(account.steamId, account.apiKey, revision)
+            return revision
+        }
         override suspend fun clear() { saved = null; unreadable = false }
     }
 }

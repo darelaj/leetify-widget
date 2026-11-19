@@ -76,18 +76,19 @@ internal fun AccountScreen(
                 Text(stringResource(R.string.remove_saved_key))
             }
         }
-        Button(onClick = onVerify, enabled = !state.busy && !state.loading) {
-            Text(stringResource(R.string.verify_profile))
-        }
-        if (state.busy || state.loading) {
-            CircularProgressIndicator()
-        }
         state.message?.let { message ->
             Text(
                 text = stringResource(message.textResource()),
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
             )
         }
+        Button(onClick = onVerify, enabled = !state.busy && !state.loading) {
+            Text(
+                stringResource(if (state.busy) R.string.verifying_profile else R.string.verify_profile),
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            )
+        }
+        if (state.loading) CircularProgressIndicator()
         TextButton(onClick = onReset, enabled = !state.loading) {
             Text(stringResource(R.string.reset_account))
         }
