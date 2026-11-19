@@ -51,14 +51,18 @@ The schema declares nullable ranks and some match ratings. It does not consisten
 
 ## Premier chart feasibility
 
-There is no documented historical Premier endpoint. `RecentMatch.rank` is only described as a number and `rank_type` as a string; the examples do not establish Premier's discriminator or whether the number is before/after the match. Detailed history's declared player stats do not add Premier rank history.
+**Decision (19 November 2026): defer the separate Premier chart widget.** The existing stats widget can display the current rating from `ranks.premier`. A dated series still needs stronger evidence.
 
-Therefore a separate chart widget is technically feasible to render, but its data is conditional:
+The [current public Swagger schema](https://api-public-docs.cs-prod.leetify.com/swagger-ui-init.js) has no dedicated Premier history endpoint. `RecentMatch` gives `finished_at` and `data_source` alongside a numeric `rank` and a string `rank_type`. The schema's example uses `rank_type: "matchmaking"`, and the profile example includes a null rank type. Neither establishes the Premier discriminator. The schema also leaves the rank units, before/after timing, unranked values, and season association unspecified. The detailed match endpoints share a `PlayerStats` schema without Premier rank points. Leetify's Rank History UI separates Premier from other ladders and groups its summary by season, but the public schema does not establish how to map a recent-match row to that view.
+
+No owner response was available for a match-by-match comparison. The [developer guidelines](https://leetify.com/blog/leetify-api-developer-guidelines/) ask integrations to refrain from storing API data. Sampled snapshots on disk would therefore need explicit provider permission, and acceptable launcher retention of rendered chart pixels remains unconfirmed.
+
+Reopen the milestone when evidence is available:
 
 1. Inspect an authorized owner's response in memory and compare several known Premier matches with the official UI.
 2. Confirm Premier identification, point timing, units, missing/unranked values, and season behavior from reliable evidence; record the evidence without retaining personal payloads.
 3. If valid, draw only points in the current response, with actual timestamps and an explicit limited-history label. Require at least two valid points. Do not mix FACEIT or competitive ranks into the series.
-4. Otherwise show an explanatory empty state and current rating; defer the timeline. Do not fabricate history by sampling and storing daily ratings.
+4. Keep the current rating in the stats widget while the separate timeline is deferred.
 
 ## Constraints that affect architecture
 

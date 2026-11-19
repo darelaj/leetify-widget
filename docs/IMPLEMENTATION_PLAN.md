@@ -80,6 +80,8 @@ Verify: WorkManager tests for deduplication, cancellation, backoff, and old-acco
 
 Prerequisite: working stats widget/refresh and a locally configured owner profile.
 
+The [19 November 2026 evidence decision](API_RESEARCH.md#premier-chart-feasibility) defers chart implementation. Release preparation can proceed with the existing stats widget.
+
 1. Resolve rank type, rating timing/units, season handling, and acceptable rendering retention against actual owner data and official UI/provider evidence. Commit a short evidence/decision update without personal responses or secrets. If unsupported, record the deferred decision and stop chart implementation here.
 2. When verified, map only actual Premier points in the current response; deduplicate/sort by match timestamp, skip invalid points, and expose a clear insufficient-data state. Test mixed ladders, missing rank, one point, duplicate dates, flat values, and season gaps. Never infer seasons or reconstruct history.
 3. Render a separate responsive Glance chart widget using a small Canvas-generated bitmap held in memory. Include time labels, latest rating, accessible text summary, refresh/source links, and history coverage. Do not add an interactive chart library for a launcher bitmap.
