@@ -2,6 +2,7 @@ package id.my.chromazone.leetify_widget.widget
 
 import android.content.Context
 import androidx.work.Constraints
+import androidx.work.BackoffPolicy
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
@@ -31,6 +32,7 @@ internal object WidgetRefreshSchedule {
         ensureHourly(context)
         val request = OneTimeWorkRequestBuilder<WidgetRefreshWorker>()
             .setConstraints(network)
+            .setBackoffCriteria(BackoffPolicy.LINEAR, 60, TimeUnit.SECONDS)
             .build()
         WorkManager.getInstance(context).enqueueUniqueWork(
             WidgetUpdates.WORK_NAME,

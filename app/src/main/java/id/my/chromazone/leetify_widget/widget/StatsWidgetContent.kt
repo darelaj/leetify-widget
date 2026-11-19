@@ -105,6 +105,7 @@ internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
             val message = when (snapshot.status) {
                 WidgetStatus.SETUP -> R.string.widget_setup
                 WidgetStatus.LOADING -> R.string.widget_loading
+                WidgetStatus.WAITING -> R.string.widget_waiting
                 WidgetStatus.STORAGE_ERROR -> R.string.storage_failure
                 else -> snapshot.failure?.toAccountMessage()?.textResource() ?: R.string.http_failure
             }

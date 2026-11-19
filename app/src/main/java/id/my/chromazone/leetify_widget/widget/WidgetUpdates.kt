@@ -9,6 +9,7 @@ import id.my.chromazone.leetify_widget.data.AccountStorageException
 import id.my.chromazone.leetify_widget.data.PreferencesAccountStorage
 import id.my.chromazone.leetify_widget.data.accountDataStore
 import kotlinx.coroutines.sync.withLock
+import java.io.IOException
 
 internal object WidgetUpdates {
     const val WORK_NAME = "stats-widget-refresh"
@@ -22,17 +23,40 @@ internal object WidgetUpdates {
     }
 
     suspend fun accountChanged(context: Context) {
-        if (ids(context).isEmpty()) return
         AccountMutationLock.mutex.withLock {
             val snapshot = try {
+                RefreshMetadataStore(context.refreshDataStore).resetAccount()
                 if (PreferencesAccountStorage(context.accountDataStore).load() == null) WidgetSnapshot()
                 else WidgetSnapshot(status = WidgetStatus.LOADING)
             } catch (_: AccountStorageException) {
+                WidgetSnapshot(status = WidgetStatus.STORAGE_ERROR)
+            } catch (_: IOException) {
                 WidgetSnapshot(status = WidgetStatus.STORAGE_ERROR)
             }
             renderAll(context, snapshot)
         }
         WidgetRefreshSchedule.enqueue(context, replace = true)
+    }
+
+    suspend fun manualRefresh(context: Context) {
+        if (ids(context).isEmpty()) return
+        WidgetRefreshSchedule.ensureHourly(context)
+        var accepted = false
+        try {
+            AccountMutationLock.mutex.withLock {
+                accepted = RefreshMetadataStore(context.refreshDataStore).claimManual(System.currentTimeMillis())
+                if (!accepted) return@withLock
+                val snapshot = if (PreferencesAccountStorage(context.accountDataStore).load() == null) WidgetSnapshot()
+                    else WidgetSnapshot(status = WidgetStatus.WAITING)
+                renderAll(context, snapshot)
+            }
+        } catch (_: AccountStorageException) {
+            AccountMutationLock.mutex.withLock { renderAll(context, WidgetSnapshot(status = WidgetStatus.STORAGE_ERROR)) }
+        } catch (_: IOException) {
+            AccountMutationLock.mutex.withLock { renderAll(context, WidgetSnapshot(status = WidgetStatus.STORAGE_ERROR)) }
+        } finally {
+            if (accepted) WidgetRefreshSchedule.enqueue(context)
+        }
     }
 
     suspend fun renderAll(context: Context, snapshot: WidgetSnapshot) {
