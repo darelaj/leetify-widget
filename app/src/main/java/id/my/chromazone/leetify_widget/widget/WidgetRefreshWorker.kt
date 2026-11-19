@@ -11,7 +11,10 @@ import kotlinx.coroutines.withContext
 
 class WidgetRefreshWorker(context: Context, parameters: WorkerParameters) : CoroutineWorker(context, parameters) {
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        if (WidgetUpdates.ids(applicationContext).isEmpty()) return@withContext Result.success()
+        if (WidgetUpdates.ids(applicationContext).isEmpty()) {
+            WidgetRefreshSchedule.cancel(applicationContext)
+            return@withContext Result.success()
+        }
         val api = LeetifyApi()
         WidgetRefreshCoordinator(
             storage = PreferencesAccountStorage(applicationContext.accountDataStore),

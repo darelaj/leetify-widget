@@ -21,6 +21,7 @@
     <string name="steam_id">SteamID64</string>
     <string name="api_key">API key (optional)</string>
     <string name="key_help">Get your own API key at leetify.com/app/developer. Keyless access has stricter rate limits.</string>
+    <string name="refresh_schedule_help">Widgets refresh about hourly while present. Android may delay updates for connectivity, Doze, or battery saving. Use Refresh for a manual update.</string>
     <string name="verify_profile">Verify and save</string>
     <string name="reset_account">Reset account</string>
     <string name="account_verified">Profile verified and account settings saved.</string>

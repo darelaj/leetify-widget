@@ -4,9 +4,6 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import androidx.glance.appwidget.compose
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import id.my.chromazone.leetify_widget.data.AccountMutationLock
 import id.my.chromazone.leetify_widget.data.AccountStorageException
 import id.my.chromazone.leetify_widget.data.PreferencesAccountStorage
@@ -21,10 +18,7 @@ internal object WidgetUpdates {
         .getAppWidgetIds(ComponentName(context, StatsWidgetReceiver::class.java))
 
     fun enqueue(context: Context) {
-        if (ids(context).isEmpty()) return
-        WorkManager.getInstance(context).enqueueUniqueWork(
-            WORK_NAME, ExistingWorkPolicy.KEEP, OneTimeWorkRequestBuilder<WidgetRefreshWorker>().build(),
-        )
+        WidgetRefreshSchedule.enqueue(context)
     }
 
     suspend fun accountChanged(context: Context) {
@@ -38,9 +32,7 @@ internal object WidgetUpdates {
             }
             renderAll(context, snapshot)
         }
-        WorkManager.getInstance(context).enqueueUniqueWork(
-            WORK_NAME, ExistingWorkPolicy.REPLACE, OneTimeWorkRequestBuilder<WidgetRefreshWorker>().build(),
-        )
+        WidgetRefreshSchedule.enqueue(context, replace = true)
     }
 
     suspend fun renderAll(context: Context, snapshot: WidgetSnapshot) {

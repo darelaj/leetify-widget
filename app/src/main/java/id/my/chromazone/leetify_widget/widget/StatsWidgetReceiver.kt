@@ -5,7 +5,6 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import androidx.work.WorkManager
 
 // Native lifecycle dispatch; Glance composes snapshots without a long-lived widget session.
 class StatsWidgetReceiver : AppWidgetProvider() {
@@ -24,6 +23,6 @@ class StatsWidgetReceiver : AppWidgetProvider() {
     }
 
     override fun onDisabled(context: Context) {
-        WorkManager.getInstance(context).cancelUniqueWork(WidgetUpdates.WORK_NAME)
+        WidgetRefreshSchedule.cancel(context)
     }
 }

@@ -17,12 +17,14 @@ import android.widget.TextView
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.work.WorkManager
+import androidx.work.NetworkType
 import id.my.chromazone.leetify_widget.data.PlayerProfile
 import id.my.chromazone.leetify_widget.data.AccountMutationLock
 import id.my.chromazone.leetify_widget.widget.StatsWidgetReceiver
 import id.my.chromazone.leetify_widget.widget.WidgetSnapshot
 import id.my.chromazone.leetify_widget.widget.WidgetStatus
 import id.my.chromazone.leetify_widget.widget.WidgetUpdates
+import id.my.chromazone.leetify_widget.widget.WidgetRefreshSchedule
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.withLock
 import org.junit.Assert.*
@@ -43,6 +45,14 @@ class StatsWidgetHostTest {
         try {
             for (id in ids) assertTrue(manager.bindAppWidgetIdIfAllowed(id, provider))
             assertTrue(WidgetUpdates.ids(context).toList().containsAll(ids))
+            WidgetRefreshSchedule.ensureHourly(context)
+            WidgetRefreshSchedule.ensureHourly(context)
+            val hourly = WorkManager.getInstance(context)
+                .getWorkInfosForUniqueWork(WidgetRefreshSchedule.PERIODIC_WORK_NAME).get()
+                .filterNot { it.state.isFinished }
+            assertEquals(1, hourly.size)
+            assertEquals(3_600_000L, hourly.single().periodicityInfo!!.repeatIntervalMillis)
+            assertEquals(NetworkType.CONNECTED, hourly.single().constraints.requiredNetworkType)
             val options = Bundle().apply {
                 putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 200)
                 putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 200)
@@ -63,7 +73,13 @@ class StatsWidgetHostTest {
                 for (id in ids) views += host.createView(context, id, manager.getAppWidgetInfo(id))
             }
             host.startListening()
-            WorkManager.getInstance(context).cancelUniqueWork(WidgetUpdates.WORK_NAME).result.get()
+            awaitText(views, "Set up your account")
+            // Let the real setup update finish before composing a synthetic snapshot.
+            repeat(100) {
+                val active = WorkManager.getInstance(context)
+                    .getWorkInfosForUniqueWork(WidgetUpdates.WORK_NAME).get().any { !it.state.isFinished }
+                if (active) kotlinx.coroutines.delay(50)
+            }
             val snapshot = WidgetSnapshot(WidgetStatus.READY,
                 PlayerProfile("76561190000000000", "Synthetic", 61.3, 70.0, -2.12, 19309.0, emptyList()), 0L)
             AccountMutationLock.mutex.withLock {
@@ -107,6 +123,14 @@ class StatsWidgetHostTest {
             instrumentation.uiAutomation.dropShellPermissionIdentity()
         }
         assertFalse(WidgetUpdates.ids(context).any { it in ids })
+        repeat(100) {
+            val active = WorkManager.getInstance(context)
+                .getWorkInfosForUniqueWork(WidgetRefreshSchedule.PERIODIC_WORK_NAME).get()
+                .any { !it.state.isFinished }
+            if (!active) return@runBlocking
+            kotlinx.coroutines.delay(50)
+        }
+        fail("Removing the last widget did not cancel hourly work")
     }
 
     private suspend fun awaitText(views: List<View>, expected: String) {
