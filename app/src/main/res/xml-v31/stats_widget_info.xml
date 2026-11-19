@@ -5,7 +5,7 @@
     android:minWidth="200dp"
     android:minHeight="220dp"
     android:minResizeWidth="200dp"
-    android:minResizeHeight="220dp"
+    android:minResizeHeight="180dp"
     android:targetCellWidth="4"
     android:targetCellHeight="3"
     android:previewLayout="@layout/stats_widget_preview"

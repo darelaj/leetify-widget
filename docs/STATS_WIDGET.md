@@ -10,7 +10,7 @@ Implemented on `feat/stats-widget`, 18 November 2026. Add **CS Stats** through a
 - Refresh, View on Leetify, and the original theme-appropriate attribution badge linked to Leetify. See [asset provenance](ATTRIBUTION.md).
 - Setup, loading, no matches, unavailable metrics, authentication/access failures, network/timeouts, rate limits, server errors, invalid responses, and inaccessible settings states. Failure snapshots contain no old profile.
 
-Compact and expanded Glance layouts target 200×220 dp and 280×260 dp. A bound-host screenshot showed clipped actions at the earlier 180 dp height, so the minimum was increased and the recommended launcher grid changed from 4×2 to 4×3. Actual grid dimensions vary by launcher. Native launcher padding and the unmodified attribution artwork are included in the sizing decision. Android 12+ gets preview layout/grid hints through versioned metadata; older hosts use legacy dimensions and the app icon fallback.
+The widget still defaults to 4×3. Its short layout can fit 4×2 when the launcher can provide 180 dp of height. The short layout puts up to five outcomes beside the attribution and keeps all four metrics, the fetch time, and both actions. Responsive layouts start at 200×180 dp for short, 200×236 dp for taller compact, and 280×260 dp for expanded. Android 12+ uses the 4×3 picker hint in the provider metadata. Actual grid dimensions vary by launcher.
 
 At 1.2× text scaling and above, the compact layout uses four single-line metric rows instead of two columns. This preserves the full metric names and action visibility. The bound-host test checks action bounds at 1.3× scaling.
 
