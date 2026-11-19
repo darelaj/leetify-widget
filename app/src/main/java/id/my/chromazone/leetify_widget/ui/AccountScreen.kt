@@ -91,5 +91,6 @@ internal fun AccountScreen(
         TextButton(onClick = onReset, enabled = !state.loading) {
             Text(stringResource(R.string.reset_account))
         }
+        Text(stringResource(R.string.app_affiliation), style = MaterialTheme.typography.bodySmall)
     }
 }

@@ -78,14 +78,13 @@ class StatsWidgetHostTest {
             }
             instrumentation.runOnMainSync {
                 for (id in ids) views += host.createView(context, id, manager.getAppWidgetInfo(id))
+                host.startListening()
             }
-            host.startListening()
+            // Binding and resizing can enqueue work before both host views are listening.
+            awaitRefreshFinished(context)
+            WidgetUpdates.enqueue(context)
+            awaitRefreshFinished(context)
             awaitText(views, "Set up your account")
-            // Let the real setup update finish before composing a synthetic snapshot.
-            awaitCondition("Initial setup work did not finish") {
-                WorkManager.getInstance(context).getWorkInfosForUniqueWork(WidgetUpdates.WORK_NAME)
-                    .get().none { !it.state.isFinished }
-            }
             val snapshot = WidgetSnapshot(WidgetStatus.READY,
                 PlayerProfile("76561190000000000", "Synthetic", 61.3, 70.0, -2.12, 19309.0, emptyList()), 0L)
             AccountMutationLock.mutex.withLock {
@@ -122,10 +121,7 @@ class StatsWidgetHostTest {
             instrumentation.runOnMainSync {
                 for (view in views) assertFalse(textOf(view).contains("61.3"))
             }
-            awaitCondition("Reset work did not finish") {
-                WorkManager.getInstance(context).getWorkInfosForUniqueWork(WidgetUpdates.WORK_NAME)
-                    .get().none { !it.state.isFinished }
-            }
+            awaitRefreshFinished(context)
             val wifiWasOn = shell("settings get global wifi_on").trim() == "1"
             val dataWasOn = shell("settings get global mobile_data").trim() == "1"
             val storage = PreferencesAccountStorage(context.accountDataStore)
@@ -177,6 +173,13 @@ class StatsWidgetHostTest {
             kotlinx.coroutines.delay(50)
         }
         fail("Removing the last widget did not cancel hourly work")
+    }
+
+    private suspend fun awaitRefreshFinished(context: android.content.Context) {
+        awaitCondition("Widget refresh work did not finish") {
+            WorkManager.getInstance(context).getWorkInfosForUniqueWork(WidgetUpdates.WORK_NAME)
+                .get().none { !it.state.isFinished }
+        }
     }
 
     private suspend fun awaitText(views: List<View>, expected: String) {
