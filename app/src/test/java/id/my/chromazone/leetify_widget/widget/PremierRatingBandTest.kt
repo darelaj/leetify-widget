@@ -1,9 +1,10 @@
 package id.my.chromazone.leetify_widget.widget
 
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PremierRatingBandTest {
@@ -13,8 +14,15 @@ class PremierRatingBandTest {
         }
         assertEquals(premierRatingBand(10_000.0), premierRatingBand(13_873.0))
         assertEquals(premierRatingBand(30_000.0), premierRatingBand(35_000.0))
-        assertEquals(Color.White, premierRatingInk(checkNotNull(premierRatingBand(13_873.0))))
-        assertNotEquals(Color.White, premierRatingInk(checkNotNull(premierRatingBand(30_000.0))))
+    }
+
+    @Test fun ratingTextHasReadableContrastInEveryTier() {
+        for (rating in 0..30_000 step 5_000) {
+            val band = checkNotNull(premierRatingBand(rating.toDouble()))
+            val contrast = (premierRatingInk(band).luminance() + 0.05f) /
+                (premierRatingSurface(band).luminance() + 0.05f)
+            assertTrue("Rating $rating has contrast $contrast", contrast >= 4.5f)
+        }
     }
 
     @Test fun missingAndInvalidScoresHaveNoTier() {

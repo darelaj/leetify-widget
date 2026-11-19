@@ -162,7 +162,7 @@ private fun CompactMetric(@StringRes label: Int, value: Double?, decimals: Int) 
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(LocalContext.current.getString(label), modifier = GlanceModifier.defaultWeight(),
                 style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 11.sp))
-            RatingBand(value, decimals, band, 11)
+            PremierRatingBadge(formatWidgetRating(value, decimals), band, 11)
         }
         return
     }
@@ -184,21 +184,12 @@ private fun Metric(@StringRes label: Int, value: Double?, decimals: Int, expande
         val fontSize = if (expanded) 23 else 16
         val band = if (label == R.string.metric_premier) premierRatingBand(value) else null
         if (band != null) {
-            RatingBand(value, decimals, band, fontSize, GlanceModifier.fillMaxWidth())
+            val badgeSize = if (expanded && LocalSize.current.width < 320.dp) 19 else fontSize
+            PremierRatingBadge(formatWidgetRating(value, decimals), band, badgeSize)
         } else {
             Text(formatWidgetRating(value, decimals), maxLines = 1,
                 style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = fontSize.sp,
                     fontWeight = FontWeight.Bold))
         }
     }
-}
-
-@Composable
-private fun RatingBand(value: Double?, decimals: Int, band: Color, fontSize: Int, modifier: GlanceModifier = GlanceModifier) {
-    Text(
-        formatWidgetRating(value, decimals),
-        modifier = modifier.background(ColorProvider(band)).cornerRadius(5.dp).padding(horizontal = 5.dp),
-        maxLines = 1,
-        style = TextStyle(color = ColorProvider(premierRatingInk(band)), fontSize = fontSize.sp, fontWeight = FontWeight.Bold),
-    )
 }

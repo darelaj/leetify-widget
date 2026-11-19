@@ -2,6 +2,9 @@ package id.my.chromazone.leetify_widget
 
 import android.content.res.Configuration
 import android.graphics.Rect
+import android.graphics.Typeface
+import android.text.Spanned
+import android.text.style.StyleSpan
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -32,11 +35,25 @@ class StatsWidgetRenderTest {
             val context = base.createConfigurationContext(configuration)
             for (size in listOf(DpSize(200.dp, 220.dp), DpSize(280.dp, 260.dp))) {
                 val snapshot = WidgetSnapshot(WidgetStatus.READY,
-                    PlayerProfile("76561190000000000", "Synthetic", 61.3, 0.0, -2.12, null,
+                    PlayerProfile("76561190000000000", "Synthetic", 61.3, null, -2.12, 13_873.0,
                         listOf(RecentMatch("synthetic", null, null, MatchOutcome.DRAW))), 0L)
                 val views = StatsWidget(snapshot).compose(context, size = size)
                 instrumentation.runOnMainSync {
-                    val root = views.apply(context, FrameLayout(context))
+                    val root = FrameLayout(context)
+                    root.addView(views.apply(context, root), FrameLayout.LayoutParams(-1, -1))
+                    val density = context.resources.displayMetrics.density
+                    val width = (size.width.value * density).toInt()
+                    val height = (size.height.value * density).toInt()
+                    root.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                        View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY))
+                    root.layout(0, 0, width, height)
+                    val rating = textViews(root).single { it.text.toString() == "13,873" }
+                    val styledScore = rating.text as? Spanned
+                    val italicSpan = styledScore?.getSpans(0, styledScore.length, StyleSpan::class.java)
+                        ?.any { it.style and Typeface.ITALIC != 0 } == true
+                    assertTrue(rating.typeface.isItalic || italicSpan)
+                    assertEquals(0, rating.layout.getEllipsisCount(0))
+                    assertTrue(rating.height >= rating.lineHeight)
                     val text = textOf(root)
                     assertTrue(text.contains("Aim"))
                     assertTrue(text.contains("Utility"))

@@ -1,6 +1,7 @@
 package id.my.chromazone.leetify_widget.widget
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 
 private val goldBand = Color(0xFFFFCF66)
 
@@ -15,5 +16,6 @@ internal fun premierRatingBand(rating: Double?): Color? = when {
     else -> goldBand
 }
 
-internal fun premierRatingInk(band: Color): Color =
-    if (band == goldBand) Color(0xFF231900) else Color.White
+internal fun premierRatingSurface(band: Color): Color = lerp(Color(0xFF111522), band, 0.34f)
+
+internal fun premierRatingInk(band: Color): Color = lerp(band, Color.White, 0.43f)
