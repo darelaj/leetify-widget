@@ -1,5 +1,8 @@
 package id.my.chromazone.leetify_widget
 
+import android.appwidget.AppWidgetManager
+import android.os.Bundle
+import android.util.SizeF
 import android.content.res.Configuration
 import android.graphics.Rect
 import android.graphics.Typeface
@@ -12,10 +15,12 @@ import android.widget.TextView
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.compose
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import id.my.chromazone.leetify_widget.data.MatchOutcome
 import id.my.chromazone.leetify_widget.data.PlayerProfile
 import id.my.chromazone.leetify_widget.data.RecentMatch
+import id.my.chromazone.leetify_widget.widget.ShortStatsWidgetReceiver
 import id.my.chromazone.leetify_widget.widget.StatsWidget
 import id.my.chromazone.leetify_widget.widget.WidgetSnapshot
 import id.my.chromazone.leetify_widget.widget.WidgetStatus
@@ -24,6 +29,30 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class StatsWidgetRenderTest {
+    @SdkSuppress(minSdkVersion = 31)
+    @Test fun dedicatedPickerEntryTargetsFourColumnsAndTwoRows() = runBlocking {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val provider = AppWidgetManager.getInstance(context).installedProviders
+            .single { it.provider.className == ShortStatsWidgetReceiver::class.java.name }
+        assertEquals("CS Stats 4×2", provider.loadLabel(context.packageManager).toString())
+        assertEquals(4, provider.targetCellWidth)
+        assertEquals(2, provider.targetCellHeight)
+
+        val matches = List(10) { index -> RecentMatch("synthetic-$index", null, null, MatchOutcome.WIN) }
+        val snapshot = WidgetSnapshot(WidgetStatus.READY,
+            PlayerProfile("76561190000000000", "Synthetic", 61.3, 43.0, -2.12, 13_873.0, matches), 0L)
+        val options = Bundle().apply {
+            putParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES, arrayListOf(SizeF(400f, 225f)))
+        }
+        val views = StatsWidget(snapshot, shortOnly = true).compose(context, options = options)
+        instrumentation.runOnMainSync {
+            val root = views.apply(context, FrameLayout(context))
+            assertEquals(5, textViews(root).count { it.text.toString() == "W" })
+            assertFalse(textViews(root).any { it.text.toString() == "CS Stats" })
+        }
+    }
+
     @Test fun compactAndExpandedSnapshotsRenderSourceStatsInBothThemes() = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         for (dark in listOf(false, true)) {
@@ -33,7 +62,8 @@ class StatsWidgetRenderTest {
                 fontScale = 1.3f
             }
             val context = base.createConfigurationContext(configuration)
-            for (size in listOf(DpSize(200.dp, 220.dp), DpSize(280.dp, 260.dp))) {
+            for (size in listOf(DpSize(280.dp, 132.dp), DpSize(200.dp, 180.dp), DpSize(280.dp, 180.dp),
+                DpSize(320.dp, 208.dp), DpSize(200.dp, 220.dp), DpSize(280.dp, 260.dp))) {
                 val matches = List(11) { index ->
                     val outcome = MatchOutcome.entries[index % MatchOutcome.entries.size]
                     RecentMatch("synthetic-$index", null, null, outcome)
@@ -56,10 +86,11 @@ class StatsWidgetRenderTest {
                     val italicSpan = styledScore?.getSpans(0, styledScore.length, StyleSpan::class.java)
                         ?.any { it.style and Typeface.ITALIC != 0 } == true
                     assertTrue(rating.typeface.isItalic || italicSpan)
-                    assertEquals(0, rating.layout.getEllipsisCount(0))
-                    assertTrue(rating.height >= rating.lineHeight)
+                    assertEquals("Premier rating truncated at $size", 0, rating.layout.getEllipsisCount(0))
+                    assertTrue("Premier rating clipped at $size: ${rating.height} < ${rating.lineHeight}",
+                        rating.height >= rating.lineHeight)
                     val chips = textViews(root).filter { it.text.toString() in listOf("W", "L", "D", "?") }.toList()
-                    assertEquals(if (size.width >= 280.dp) 10 else 5, chips.size)
+                    assertEquals(if (size.width >= 280.dp && size.height >= 220.dp) 10 else 5, chips.size)
                     for (chip in chips) {
                         assertTrue("Result ${chip.text} clipped at $size (${chip.width}×${chip.height})",
                             chip.height >= chip.lineHeight && chip.layout.getEllipsisCount(0) == 0)
@@ -72,6 +103,14 @@ class StatsWidgetRenderTest {
                     assertTrue(text.contains("—"))
                     assertTrue(text.contains("D"))
                     assertTrue(text.contains("View on Leetify"))
+                    if (size.height < 220.dp) {
+                        for (node in textViews(root)) {
+                            val visible = Rect()
+                            assertTrue("${node.text} clipped at $size",
+                                node.height >= node.lineHeight && node.getLocalVisibleRect(visible) &&
+                                    visible.height() == node.height && node.layout.getEllipsisCount(0) == 0)
+                        }
+                    }
                 }
             }
         }
@@ -80,7 +119,7 @@ class StatsWidgetRenderTest {
     @Test fun setupSnapshotOffersSettingsWithoutStats() = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
-        val views = StatsWidget().compose(context, size = DpSize(200.dp, 220.dp))
+        val views = StatsWidget().compose(context, size = DpSize(200.dp, 180.dp))
         instrumentation.runOnMainSync {
             val text = textOf(views.apply(context, FrameLayout(context)))
             assertTrue(text.contains("Set up your account"))

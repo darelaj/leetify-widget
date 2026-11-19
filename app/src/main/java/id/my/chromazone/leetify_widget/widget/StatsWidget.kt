@@ -9,9 +9,15 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
 
-class StatsWidget internal constructor(private val snapshot: WidgetSnapshot = WidgetSnapshot()) : GlanceAppWidget() {
+class StatsWidget internal constructor(
+    private val snapshot: WidgetSnapshot = WidgetSnapshot(),
+    private val shortOnly: Boolean = false,
+) : GlanceAppWidget() {
     override val stateDefinition = null
-    override val sizeMode = SizeMode.Responsive(setOf(DpSize(200.dp, 220.dp), DpSize(280.dp, 260.dp)))
+    override val sizeMode = SizeMode.Responsive(
+        if (shortOnly) setOf(DpSize(280.dp, 132.dp), DpSize(280.dp, 180.dp), DpSize(320.dp, 208.dp))
+        else setOf(shortSize, DpSize(200.dp, 236.dp), DpSize(280.dp, 260.dp)),
+    )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent { GlanceTheme { StatsWidgetContent(snapshot) } }
@@ -21,3 +27,5 @@ class StatsWidget internal constructor(private val snapshot: WidgetSnapshot = Wi
         provideContent { GlanceTheme { StatsWidgetContent(WidgetSnapshot()) } }
     }
 }
+
+private val shortSize = DpSize(200.dp, 180.dp)

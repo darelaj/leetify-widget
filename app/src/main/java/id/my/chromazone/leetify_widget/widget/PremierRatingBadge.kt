@@ -21,12 +21,12 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 
 @Composable
-internal fun PremierRatingBadge(text: String, band: PremierRatingBand, fontSize: Int) {
+internal fun PremierRatingBadge(text: String, band: PremierRatingBand, fontSize: Int, dense: Boolean = false) {
     val background = remember(band) { badgeBackground(band.surface, band.accent) }
     Text(
         text,
         modifier = GlanceModifier.background(ImageProvider(background))
-            .padding(start = 23.dp, end = 13.dp),
+            .padding(start = if (dense) 16.dp else 23.dp, end = if (dense) 7.dp else 13.dp),
         maxLines = 1,
         style = TextStyle(
             color = ColorProvider(band.ink),
