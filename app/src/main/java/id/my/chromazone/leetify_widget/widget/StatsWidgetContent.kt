@@ -67,6 +67,7 @@ internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
                 },
                     fontWeight = FontWeight.Bold),
             )
+            Spacer(GlanceModifier.width(6.dp))
             Image(
                 provider = ImageProvider(if (dark) R.drawable.leetify_badge_white else R.drawable.leetify_badge_black),
                 contentDescription = context.getString(R.string.widget_attribution),
@@ -76,7 +77,7 @@ internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
         }
         val profile = snapshot.profile
         if (snapshot.status == WidgetStatus.READY && profile != null) {
-            Spacer(GlanceModifier.height(if (compactLargeText) 2.dp else 4.dp))
+            Spacer(GlanceModifier.height(if (compactLargeText) 2.dp else 6.dp))
             if (compactLargeText) {
                 Column(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
                     CompactMetric(R.string.metric_aim, profile.aim, 1)
@@ -123,6 +124,7 @@ internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
             snapshot.fetchedAtMillis?.let {
                 val date = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(it))
                 Text(context.getString(R.string.widget_updated, date),
+                    maxLines = 1,
                     style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 9.sp))
             }
         } else {
@@ -137,19 +139,22 @@ internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
                 Text(context.getString(message), style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 14.sp))
             }
         }
-        Spacer(GlanceModifier.height(if (compactLargeText) 2.dp else 4.dp))
-        Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Spacer(GlanceModifier.fillMaxWidth().height(1.dp).background(GlanceTheme.colors.surfaceVariant))
+        val actionPadding = if (compactLargeText) 2.dp else 4.dp
+        Row(GlanceModifier.fillMaxWidth().padding(top = actionPadding), verticalAlignment = Alignment.CenterVertically) {
             Text(context.getString(R.string.widget_refresh),
                 modifier = GlanceModifier.background(GlanceTheme.colors.primaryContainer).cornerRadius(8.dp)
-                    .padding(horizontal = 8.dp, vertical = if (compactLargeText) 2.dp else 4.dp).clickable(actionSendBroadcast(
+                    .padding(horizontal = 6.dp, vertical = actionPadding).clickable(actionSendBroadcast(
                     Intent(context, StatsWidgetReceiver::class.java).setAction(WidgetUpdates.REFRESH_ACTION))),
                 style = TextStyle(color = GlanceTheme.colors.onPrimaryContainer, fontSize = 11.sp, fontWeight = FontWeight.Bold))
             Spacer(GlanceModifier.defaultWeight())
+            Spacer(GlanceModifier.width(6.dp))
             val destination = if (profile != null) {
                 Intent(Intent.ACTION_VIEW, "https://leetify.com/app/profile/${profile.steamId}".toUri())
             } else Intent(context, MainActivity::class.java)
             Text(context.getString(if (profile != null) R.string.widget_source else R.string.widget_settings),
-                modifier = GlanceModifier.clickable(actionStartActivity(destination)),
+                modifier = GlanceModifier.padding(vertical = actionPadding)
+                    .clickable(actionStartActivity(destination)),
                 style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold))
         }
     }
@@ -158,18 +163,17 @@ internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
 @Composable
 private fun CompactMetric(@StringRes label: Int, value: Double?, decimals: Int) {
     val band = if (label == R.string.metric_premier) premierRatingBand(value) else null
-    if (band != null) {
-        Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(LocalContext.current.getString(label), modifier = GlanceModifier.defaultWeight(),
-                style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 11.sp))
+    Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(LocalContext.current.getString(label), modifier = GlanceModifier.defaultWeight(),
+            maxLines = 1, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 11.sp))
+        Spacer(GlanceModifier.width(6.dp))
+        if (band != null) {
             PremierRatingBadge(formatWidgetRating(value, decimals), band, 11)
+        } else {
+            Text(formatWidgetRating(value, decimals), maxLines = 1,
+                style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 11.sp, fontWeight = FontWeight.Bold))
         }
-        return
     }
-    Text(
-        text = "${LocalContext.current.getString(label)}: ${formatWidgetRating(value, decimals)}",
-        style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 11.sp),
-    )
 }
 
 @Composable
@@ -181,6 +185,7 @@ private fun Metric(@StringRes label: Int, value: Double?, decimals: Int, expande
     ) {
         Text(LocalContext.current.getString(label), maxLines = 1,
             style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = if (expanded) 12.sp else 10.sp))
+        if (expanded) Spacer(GlanceModifier.height(2.dp))
         val fontSize = if (expanded) 23 else 16
         val band = if (label == R.string.metric_premier) premierRatingBand(value) else null
         if (band != null) {
@@ -188,7 +193,7 @@ private fun Metric(@StringRes label: Int, value: Double?, decimals: Int, expande
             PremierRatingBadge(formatWidgetRating(value, decimals), band, badgeSize)
         } else {
             Text(formatWidgetRating(value, decimals), maxLines = 1,
-                style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = fontSize.sp,
+                style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = fontSize.sp,
                     fontWeight = FontWeight.Bold))
         }
     }
