@@ -52,6 +52,8 @@ internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
     val context = LocalContext.current
     val expanded = LocalSize.current.width >= 280.dp
     val compactLargeText = !expanded && context.resources.configuration.fontScale >= 1.2f
+    val tightExpanded = expanded && LocalSize.current.width < 320.dp &&
+        context.resources.configuration.fontScale >= 1.2f
     val dark = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
     Column(
         modifier = GlanceModifier.fillMaxSize().appWidgetBackground()
@@ -80,7 +82,7 @@ internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
         }
         val profile = snapshot.profile
         if (snapshot.status == WidgetStatus.READY && profile != null) {
-            Spacer(GlanceModifier.height(if (compactLargeText) 2.dp else 6.dp))
+            Spacer(GlanceModifier.height(if (compactLargeText || tightExpanded) 2.dp else 6.dp))
             if (compactLargeText) {
                 Column(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
                     CompactMetric(R.string.metric_aim, profile.aim, 1)
@@ -101,7 +103,7 @@ internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
                     Metric(R.string.metric_premier, profile.premierRating, 0, expanded, GlanceModifier.defaultWeight())
                 }
             }
-            Spacer(GlanceModifier.height(if (compactLargeText) 2.dp else 6.dp))
+            Spacer(GlanceModifier.height(if (compactLargeText || tightExpanded) 2.dp else 6.dp))
             RecentResults(profile.recentMatches, expanded, dark)
             snapshot.fetchedAtMillis?.let {
                 val date = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(it))
@@ -211,7 +213,7 @@ private fun CompactMetric(@StringRes label: Int, value: Double?, decimals: Int) 
     Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(LocalContext.current.getString(label), modifier = GlanceModifier.defaultWeight(),
             maxLines = 1, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 11.sp))
-        Spacer(GlanceModifier.width(6.dp))
+        Spacer(GlanceModifier.width(if (band != null) 10.dp else 6.dp))
         if (band != null) {
             PremierRatingBadge(formatWidgetRating(value, decimals), band, 11)
         } else {
@@ -230,13 +232,14 @@ private fun Metric(@StringRes label: Int, value: Double?, decimals: Int, expande
     ) {
         Text(LocalContext.current.getString(label), maxLines = 1,
             style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = if (expanded) 12.sp else 10.sp))
-        if (expanded) Spacer(GlanceModifier.height(2.dp))
         val fontSize = if (expanded) 23 else 16
         val band = if (label == R.string.metric_premier) premierRatingBand(value) else null
         if (band != null) {
+            Spacer(GlanceModifier.height(if (expanded) 6.dp else 4.dp))
             val badgeSize = if (expanded && LocalSize.current.width < 320.dp) 19 else fontSize
             PremierRatingBadge(formatWidgetRating(value, decimals), band, badgeSize)
         } else {
+            if (expanded) Spacer(GlanceModifier.height(2.dp))
             Text(formatWidgetRating(value, decimals), maxLines = 1,
                 style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = fontSize.sp,
                     fontWeight = FontWeight.Bold))
