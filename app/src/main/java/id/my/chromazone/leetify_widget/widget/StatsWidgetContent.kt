@@ -34,11 +34,14 @@ import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
+import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import id.my.chromazone.leetify_widget.MainActivity
 import id.my.chromazone.leetify_widget.R
+import id.my.chromazone.leetify_widget.data.MAX_RECENT_MATCHES
 import id.my.chromazone.leetify_widget.data.MatchOutcome
+import id.my.chromazone.leetify_widget.data.RecentMatch
 import id.my.chromazone.leetify_widget.ui.textResource
 import id.my.chromazone.leetify_widget.ui.toAccountMessage
 import java.text.DateFormat
@@ -99,28 +102,7 @@ internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
                 }
             }
             Spacer(GlanceModifier.height(if (compactLargeText) 2.dp else 6.dp))
-            Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    context.getString(if (profile.recentMatches.isEmpty()) R.string.widget_no_matches else R.string.widget_recent),
-                    modifier = GlanceModifier.defaultWeight(),
-                    maxLines = 1,
-                    style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = if (expanded) 12.sp else 10.sp),
-                )
-                for (match in profile.recentMatches) {
-                    val color = when (match.outcome) {
-                        MatchOutcome.WIN -> if (dark) Color(0xFF8CE99A) else Color(0xFF17652C)
-                        MatchOutcome.LOSS -> if (dark) Color(0xFFFFA8A8) else Color(0xFFB02020)
-                        else -> null
-                    }
-                    Box(GlanceModifier.padding(start = 2.dp)) {
-                        Text(match.outcome.widgetLabel(), modifier = GlanceModifier
-                            .background(GlanceTheme.colors.surfaceVariant).cornerRadius(6.dp)
-                            .padding(horizontal = 3.dp, vertical = 2.dp),
-                            style = TextStyle(color = color?.let { ColorProvider(it) } ?: GlanceTheme.colors.onSurface,
-                                fontSize = 11.sp, fontWeight = FontWeight.Bold))
-                    }
-                }
-            }
+            RecentResults(profile.recentMatches, expanded, dark)
             snapshot.fetchedAtMillis?.let {
                 val date = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(it))
                 Text(context.getString(R.string.widget_updated, date),
@@ -157,6 +139,69 @@ internal fun StatsWidgetContent(snapshot: WidgetSnapshot) {
                     .clickable(actionStartActivity(destination)),
                 style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold))
         }
+    }
+}
+
+@Composable
+private fun RecentResults(matches: List<RecentMatch>, expanded: Boolean, dark: Boolean) {
+    val wide = expanded && LocalSize.current.width >= 320.dp
+    val visibleMatches = matches.take(if (expanded) MAX_RECENT_MATCHES else 5)
+    val label = LocalContext.current.getString(
+        when {
+            matches.isEmpty() -> R.string.widget_no_matches
+            wide -> R.string.widget_recent
+            else -> R.string.widget_recent_short
+        },
+    )
+    val labelStyle = TextStyle(
+        color = GlanceTheme.colors.onSurfaceVariant,
+        fontSize = if (wide) 12.sp else 10.sp,
+        fontWeight = FontWeight.Bold,
+    )
+    if (wide) {
+        Column(GlanceModifier.fillMaxWidth()) {
+            Text(label, maxLines = 1, style = labelStyle)
+            if (matches.isNotEmpty()) {
+                Spacer(GlanceModifier.height(3.dp))
+                ResultChips(visibleMatches, wide, dark)
+            }
+        }
+    } else {
+        Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(label, modifier = GlanceModifier.defaultWeight(), maxLines = 1, style = labelStyle)
+            if (visibleMatches.isNotEmpty()) ResultChips(visibleMatches, wide, dark)
+        }
+    }
+}
+
+@Composable
+private fun ResultChips(matches: List<RecentMatch>, wide: Boolean, dark: Boolean) {
+    Row {
+        for (match in matches) ResultChip(match.outcome, wide, dark)
+    }
+}
+
+@Composable
+private fun ResultChip(outcome: MatchOutcome, wide: Boolean, dark: Boolean) {
+    val color = when (outcome) {
+        MatchOutcome.WIN -> if (dark) Color(0xFF8CE99A) else Color(0xFF17652C)
+        MatchOutcome.LOSS -> if (dark) Color(0xFFFFA8A8) else Color(0xFFB02020)
+        else -> null
+    }
+    Box(GlanceModifier.padding(end = if (wide) 3.dp else 2.dp)) {
+        Text(
+            outcome.widgetLabel(),
+            modifier = GlanceModifier.width(if (wide) 22.dp else 18.dp)
+                .background(GlanceTheme.colors.surfaceVariant).cornerRadius(6.dp)
+                .padding(vertical = if (wide) 3.dp else 1.dp),
+            maxLines = 1,
+            style = TextStyle(
+                color = color?.let { ColorProvider(it) } ?: GlanceTheme.colors.onSurface,
+                fontSize = if (wide) 13.sp else 12.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+            ),
+        )
     }
 }
 

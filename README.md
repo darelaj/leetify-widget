@@ -1,6 +1,6 @@
 # Stat Peek
 
-Stat Peek is an unofficial Counter-Strike home-screen widget for Android 7.0 (API 24) and newer. It shows Aim, Utility, Leetify Rating, current Premier rating, and up to five recent match results. Stat Peek is independent of Valve and Leetify.
+Stat Peek is an unofficial Counter-Strike home-screen widget for Android 7.0 (API 24) and newer. It shows Aim, Utility, Leetify Rating, current Premier rating, and up to ten recent match results. Compact widgets show up to five. Stat Peek is independent of Valve and Leetify.
 
 1. Open **Stat Peek** and enter the 17-digit SteamID64 for your registered, accessible Leetify profile.
 2. Optionally enter your own [Leetify API key](https://leetify.com/app/developer). Keyless requests have stricter limits. Tap **Verify and save**.

@@ -8,6 +8,8 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.doubleOrNull
 
+internal const val MAX_RECENT_MATCHES = 10
+
 @OptIn(ExperimentalTime::class)
 internal fun JsonObject.toPlayerProfile(steamId: String): PlayerProfile {
     if (keys.none { it in setOf("steam64_id", "rating", "ranks", "recent_matches", "privacy_mode") }) {
@@ -39,7 +41,7 @@ internal fun JsonObject.toPlayerProfile(steamId: String): PlayerProfile {
             },
         )
     }.sortedWith(compareByDescending<RecentMatch> { it.finishedAtMillis })
-        .distinctBy { it.id }.take(5)
+        .distinctBy { it.id }.take(MAX_RECENT_MATCHES)
     return PlayerProfile(
         steamId = steamId,
         name = this["name"].text(),
