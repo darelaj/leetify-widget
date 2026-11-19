@@ -223,17 +223,18 @@ private fun ResultChip(outcome: MatchOutcome, wide: Boolean, dark: Boolean) {
 }
 
 @Composable
-private fun CompactMetric(@StringRes label: Int, value: Double?, decimals: Int) {
+private fun CompactMetric(@StringRes label: Int, value: Double?, decimals: Int, dense: Boolean = false) {
     val band = if (label == R.string.metric_premier) premierRatingBand(value) else null
+    val fontSize = if (dense) 9 else 11
     Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(LocalContext.current.getString(label), modifier = GlanceModifier.defaultWeight(),
-            maxLines = 1, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 11.sp))
-        Spacer(GlanceModifier.width(if (band != null) 10.dp else 6.dp))
+            maxLines = 1, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = fontSize.sp))
+        Spacer(GlanceModifier.width(if (dense) 3.dp else if (band != null) 10.dp else 6.dp))
         if (band != null) {
-            PremierRatingBadge(formatWidgetRating(value, decimals), band, 11)
+            PremierRatingBadge(formatWidgetRating(value, decimals), band, if (dense) 10 else 11, dense)
         } else {
             Text(formatWidgetRating(value, decimals), maxLines = 1,
-                style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 11.sp, fontWeight = FontWeight.Bold))
+                style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = fontSize.sp, fontWeight = FontWeight.Bold))
         }
     }
 }
@@ -246,6 +247,10 @@ private fun Metric(@StringRes label: Int, value: Double?, decimals: Int, expande
             .padding(horizontal = if (expanded) 10.dp else 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (LocalSize.current.height < 180.dp) {
+            CompactMetric(label, value, decimals, dense = true)
+            return@Column
+        }
         Text(LocalContext.current.getString(label), maxLines = 1,
             style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant,
                 fontSize = if (short) 9.sp else if (expanded) 12.sp else 10.sp))

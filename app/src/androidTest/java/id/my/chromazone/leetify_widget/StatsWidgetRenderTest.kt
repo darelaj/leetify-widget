@@ -62,7 +62,7 @@ class StatsWidgetRenderTest {
                 fontScale = 1.3f
             }
             val context = base.createConfigurationContext(configuration)
-            for (size in listOf(DpSize(200.dp, 180.dp), DpSize(280.dp, 180.dp),
+            for (size in listOf(DpSize(280.dp, 132.dp), DpSize(200.dp, 180.dp), DpSize(280.dp, 180.dp),
                 DpSize(200.dp, 220.dp), DpSize(280.dp, 260.dp))) {
                 val matches = List(11) { index ->
                     val outcome = MatchOutcome.entries[index % MatchOutcome.entries.size]
