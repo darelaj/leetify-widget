@@ -96,4 +96,16 @@ class RefreshMetadataStoreTest {
             assertTrue(store.claimManual(Long.MAX_VALUE))
         } finally { close() }
     }
+
+    @Test fun obsoleteWorkCannotChangeCurrentRetryTiming() = runBlocking {
+        try {
+            val store = metadata()
+            store.startAttempt("old", "first", 1_000)
+            assertEquals(AllowedRefresh(1), store.startAttempt("new", "second", 61_000))
+            assertFalse(store.finishAttempt("old", "first", 1,
+                ProfileApiException(ProfileFailure.RATE_LIMITED, 900_000), 62_000))
+            assertFalse(store.finishAttempt("new", "second", 1, null, 62_000))
+            assertTrue(store.claimManual(121_000))
+        } finally { close() }
+    }
 }

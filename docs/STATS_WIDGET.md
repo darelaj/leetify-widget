@@ -16,7 +16,7 @@ At 1.2× text scaling and above, the compact layout uses four single-line metric
 
 ## Refresh and retention
 
-Each update is one unique, one-time WorkManager request shared by all widget instances. The worker makes one profile request and composes fresh Glance RemoteViews for every bound instance. Adding/resizing a widget and tapping Refresh enqueue work. There is no periodic schedule, cooldown, or automatic retry in this milestone; those belong to `feat/widget-refresh`.
+Each update is one unique, one-time WorkManager request shared by all widget instances. The worker makes one profile request and composes fresh Glance RemoteViews for every bound instance. Adding/resizing a widget, changing account settings, and tapping Refresh enqueue work. One unique hourly dispatcher exists while widgets are present; it enqueues through the same shared refresh path. Both jobs require a connected network. Removing the last widget cancels both jobs. See [scheduled refresh](WIDGET_REFRESH.md) for cooldown, retries, and validation.
 
 The receiver uses native AppWidgetProvider lifecycle callbacks and Glance's one-shot `compose` API. It intentionally avoids Glance's long-lived session lifecycle and persistent Glance state. Composition uses fresh IDs to avoid collisions with cleanup from a cancelled refresh; publication still targets the actual bound widget IDs. Actions use explicit intents rather than composition-session lambdas.
 
@@ -36,6 +36,6 @@ Unit tests cover numeric formatting, a single shared fetch, missing account, err
 
 The bound-host test uses synthetic stats and an isolated host ID, deletes its widget instances, and exports a synthetic PNG for visual review. That test image is not a cached API response. It exercises the Android widget hosting service, not a third-party launcher's drag/drop picker UI.
 
-Live owner/API validation, an API 24 device, reboot/force-stop behavior, third-party launcher interactions, and backup transport remain unrun. Hourly scheduling, manual refresh cooldown/backoff, the conditional Premier chart, release branding, and provider render-retention clarification remain subsequent work.
+Live owner/API validation, an API 24 device, reboot/force-stop behavior, third-party launcher interactions, and backup transport remain unrun. The conditional Premier chart, release branding, and provider render-retention clarification remain subsequent work. Scheduled refresh was added on 19 November; its checks are recorded separately below.
 
 Final checks on 18 November 2026: 30 JVM tests and six API 37 instrumentation tests passed; debug assembly and lint passed with 0 errors and the same 14 existing warnings. Git whitespace checks passed. Synthetic bound-host output was visually inspected; the local artifact is ignored at `app/build/outputs/widget-host.png`.

@@ -30,9 +30,11 @@ class WidgetRefreshCoordinatorTest {
         WidgetRefreshCoordinator(storage, { error("No request expected") }, { snapshots += it }).refresh()
         assertEquals(WidgetStatus.SETUP, snapshots.single().status)
         storage.saved = AccountCredentials(id, null, "first")
-        for (failure in listOf(ProfileFailure.NETWORK, ProfileFailure.PROFILE_UNAVAILABLE, ProfileFailure.RATE_LIMITED)) {
+        for (failure in ProfileFailure.entries) {
             snapshots.clear()
-            WidgetRefreshCoordinator(storage, { throw ProfileApiException(failure) }, { snapshots += it }).refresh()
+            val error = ProfileApiException(failure, 900_000)
+            val result = WidgetRefreshCoordinator(storage, { throw error }, { snapshots += it }).refresh("first")
+            assertSame(error, result)
             assertEquals(WidgetStatus.ERROR, snapshots.last().status)
             assertEquals(failure, snapshots.last().failure)
             assertNull(snapshots.last().profile)
@@ -49,6 +51,29 @@ class WidgetRefreshCoordinatorTest {
             }, { snapshots += it }).refresh()
             assertEquals(listOf(WidgetStatus.LOADING), snapshots.map { it.status })
         }
+    }
+
+    @Test fun replacedRevisionDoesNotStartRequestOrScheduleAnOldFailure() = runTest {
+        val storage = MemoryStorage(AccountCredentials(id, null, "second"))
+        val snapshots = mutableListOf<WidgetSnapshot>()
+        assertNull(WidgetRefreshCoordinator(storage, { error("Obsolete work must not fetch") },
+            { snapshots += it }).refresh("first"))
+        assertTrue(snapshots.isEmpty())
+        assertNull(WidgetRefreshCoordinator(storage, {
+            storage.saved = null
+            throw ProfileApiException(ProfileFailure.RATE_LIMITED, 900_000)
+        }, { snapshots += it }).refresh("second"))
+        assertEquals(listOf(WidgetStatus.LOADING), snapshots.map { it.status })
+    }
+
+    @Test fun cancellationDoesNotPublishFailureOrRequestRetry() = runTest {
+        val snapshots = mutableListOf<WidgetSnapshot>()
+        val result = runCatching {
+            WidgetRefreshCoordinator(MemoryStorage(AccountCredentials(id, null, "first")),
+                { throw kotlinx.coroutines.CancellationException() }, { snapshots += it }).refresh("first")
+        }
+        assertTrue(result.exceptionOrNull() is kotlinx.coroutines.CancellationException)
+        assertEquals(listOf(WidgetStatus.LOADING), snapshots.map { it.status })
     }
 
     private class MemoryStorage(var saved: AccountCredentials?) : AccountStorage {
