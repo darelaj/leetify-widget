@@ -7,6 +7,7 @@ import id.my.chromazone.leetify_widget.data.AccountStorage
 import id.my.chromazone.leetify_widget.data.AccountStorageException
 import id.my.chromazone.leetify_widget.data.LeetifyApi
 import id.my.chromazone.leetify_widget.data.ProfileApiException
+import id.my.chromazone.leetify_widget.data.VerifiedAccountProfile
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -24,7 +25,7 @@ internal class AccountViewModel(
     private val api: LeetifyApi,
     private val storage: AccountStorage,
     private val io: CoroutineDispatcher = Dispatchers.IO,
-    private val onAccountChanged: suspend () -> Unit = {},
+    private val onAccountChanged: suspend (VerifiedAccountProfile?) -> Unit = {},
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(AccountState())
     val state = mutableState.asStateFlow()
@@ -101,12 +102,13 @@ internal class AccountViewModel(
         }
         if (effectiveKey != null) api.validateApiKey(effectiveKey)
         currentCoroutineContext().ensureActive()
-        api.fetchProfile(steamId, effectiveKey)
+        val profile = api.fetchProfile(steamId, effectiveKey)
+        val fetchedAt = System.currentTimeMillis()
         currentCoroutineContext().ensureActive()
 
         writes.withLock {
             if (ticket != generation) return@withLock
-            storage.save(AccountCredentials(steamId, effectiveKey))
+            val revision = storage.save(AccountCredentials(steamId, effectiveKey))
             withContext(NonCancellable) {
                 withContext(Dispatchers.Main.immediate) {
                     if (ticket == generation) {
@@ -120,7 +122,7 @@ internal class AccountViewModel(
                         )
                     }
                 }
-                onAccountChanged()
+                onAccountChanged(VerifiedAccountProfile(revision, profile, fetchedAt))
             }
         }
     }
@@ -141,7 +143,7 @@ internal class AccountViewModel(
                 withContext(io + NonCancellable) {
                     writes.withLock {
                         storage.clear()
-                        onAccountChanged()
+                        onAccountChanged(null)
                     }
                 }
                 mutableState.value = AccountState(loading = false)

@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
                     AccountViewModel(
                         api = LeetifyApi.forAccountSetup(),
                         storage = PreferencesAccountStorage(applicationContext.accountDataStore),
-                        onAccountChanged = { WidgetUpdates.accountChanged(applicationContext) },
+                        onAccountChanged = { verified -> WidgetUpdates.accountChanged(applicationContext, verified) },
                     )
                 }
             },

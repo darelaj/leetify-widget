@@ -30,6 +30,7 @@ internal class PreferencesAccountStorage(
     override suspend fun save(account: AccountCredentials) = protect {
         require(account.steamId.matches(Regex("[0-9]{17}")))
         AccountMutationLock.mutex.withLock {
+            val revision = UUID.randomUUID().toString()
             val encrypted = account.apiKey?.let {
                 require(it.isNotBlank() && it.all { char -> char in '!'..'~' })
                 cipher.encrypt(it)
@@ -37,11 +38,11 @@ internal class PreferencesAccountStorage(
             store.edit {
                 it.clear()
                 it[STEAM_ID] = account.steamId
-                it[REVISION] = UUID.randomUUID().toString()
+                it[REVISION] = revision
                 if (encrypted != null) it[API_KEY] = encrypted
             }
+            revision
         }
-        Unit
     }
 
     override suspend fun clear() = protect {
