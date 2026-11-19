@@ -99,6 +99,11 @@ class StatsWidgetHostTest {
                     view.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
                         View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY))
                     view.layout(0, 0, width, height)
+                    val rating = textViews(view).single { it.text.toString() == "19,309" }
+                    val visibleRating = Rect()
+                    assertTrue("Premier rating clipped", rating.getLocalVisibleRect(visibleRating))
+                    assertEquals("Premier rating clipped", rating.height, visibleRating.height())
+                    assertTrue("Premier rating text was squeezed", rating.height >= rating.lineHeight)
                     for (action in textViews(view).filter { it.text.toString() in listOf("Refresh", "View on Leetify") }) {
                         val bounds = Rect()
                         action.getDrawingRect(bounds)

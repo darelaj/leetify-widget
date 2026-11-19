@@ -1,6 +1,7 @@
 package id.my.chromazone.leetify_widget
 
 import android.content.res.Configuration
+import android.graphics.Rect
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -59,6 +60,42 @@ class StatsWidgetRenderTest {
             assertTrue(text.contains("Account settings"))
             assertFalse(text.contains("Fetched"))
         }
+    }
+
+    @Test fun tallSnapshotSpreadsRatingsAndKeepsFooterAtBottom() = runBlocking {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val size = DpSize(340.dp, 300.dp)
+        val matches = MatchOutcome.entries.plus(MatchOutcome.LOSS).mapIndexed { index, outcome ->
+            RecentMatch("synthetic-$index", null, null, outcome)
+        }
+        val snapshot = WidgetSnapshot(WidgetStatus.READY,
+            PlayerProfile("76561190000000000", "Synthetic", 61.3, 43.0, -2.12, 13_873.0, matches), 0L)
+        val views = StatsWidget(snapshot).compose(context, size = size)
+        instrumentation.runOnMainSync {
+            val root = FrameLayout(context)
+            root.addView(views.apply(context, root), FrameLayout.LayoutParams(-1, -1))
+            val density = context.resources.displayMetrics.density
+            val width = (340 * density).toInt()
+            val height = (300 * density).toInt()
+            root.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY))
+            root.layout(0, 0, width, height)
+            val textViews = textViews(root).toList()
+            fun bounds(label: String): Rect {
+                val view = textViews.single { it.text.toString() == label }
+                return Rect(0, 0, view.width, view.height).also { root.offsetDescendantRectToMyCoords(view, it) }
+            }
+            assertTrue(bounds("Premier").top - bounds("Aim").top > 60 * density)
+            assertTrue(bounds("Refresh").bottom in (height - (16 * density).toInt())..height)
+            assertEquals(5, textViews.count { it.text.toString() in listOf("W", "L", "D", "?") })
+        }
+    }
+
+    private fun textViews(view: View): Sequence<TextView> = when (view) {
+        is TextView -> sequenceOf(view)
+        is ViewGroup -> (0 until view.childCount).asSequence().flatMap { textViews(view.getChildAt(it)) }
+        else -> emptySequence()
     }
 
     private fun textOf(view: View): String = when (view) {
